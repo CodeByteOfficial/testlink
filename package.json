@@ -1,0 +1,38 @@
+{
+  "name": "bulk-csv-to-xml-converter",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "playwright test --config=playwright/playwright.config.js",
+    "test:headed": "playwright test --config=playwright/playwright.config.js --headed",
+    "test:ui": "playwright test --config=playwright/playwright.config.js --ui",
+    "test:report": "playwright show-report playwright/playwright-report",
+    "login": "node playwright/login.js",
+    "test:login": "node playwright/universal_login.js",
+    "testlink:task1": "node playwright/testlink_task1.js"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.344.0",
+    "papaparse": "^5.4.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "playwright": "^1.61.1",
+    "postcss": "^8.4.45",
+    "tailwindcss": "^3.4.10",
+    "vite": "^5.4.2"
+  }
+}
