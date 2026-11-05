@@ -33,3 +33,4 @@ playwright/.cache
 .env
 .env.*
 !.env.example
+
