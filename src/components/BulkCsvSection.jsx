@@ -136,6 +136,13 @@ export default function BulkCsvSection({ onBackToSingle }) {
     } catch (_) {}
   };
 
+  const handleCloseAutomationModal = async () => {
+    if (isAutomationRunning) {
+      await handleStopAutomation();
+    }
+    setIsAutomationModalOpen(false);
+  };
+
   React.useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -911,7 +918,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
       {/* Automation Modal */}
       <RunBabyRunModal
         isOpen={isAutomationModalOpen}
-        onClose={() => setIsAutomationModalOpen(false)}
+        onClose={handleCloseAutomationModal}
         isRunning={isAutomationRunning}
         status={automationStatus}
         logs={automationLogs}

@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -148,12 +148,35 @@ function runLoginScriptPlugin() {
 
   const stopHandler = (req, res) => {
     if (activeLoginProcess) {
+      const pid = activeLoginProcess.pid;
+      console.log(`\n============================================================`);
+      console.log(`🛑 [Run baby run] Terminating automation process tree (PID: ${pid})...`);
+      console.log(`============================================================\n`);
+
       try {
-        activeLoginProcess.kill();
-      } catch (_) {}
+        if (process.platform === 'win32') {
+          // On Windows, taskkill /pid <PID> /T /F terminates the entire process tree (cmd.exe -> npm -> node -> chromium)
+          exec(`taskkill /pid ${pid} /T /F`, (err) => {
+            if (err) {
+              console.log(`[Taskkill note] Process ${pid} may have already finished.`);
+            } else {
+              console.log(`[Taskkill] Successfully killed process tree ${pid}`);
+            }
+          });
+        } else {
+          try {
+            process.kill(-pid, 'SIGKILL');
+          } catch (_) {
+            activeLoginProcess.kill('SIGKILL');
+          }
+        }
+      } catch (err) {
+        console.error(`[Stop Error] Failed to kill process ${pid}:`, err);
+      }
+
       activeLoginProcess = null;
-      scriptStatus = 'idle';
-      scriptLogs.push(`\n[${new Date().toLocaleTimeString()}] Automation stopped by user.\n`);
+      scriptStatus = 'failed';
+      scriptLogs.push(`\n[${new Date().toLocaleTimeString()}] 🛑 Automation stopped and terminal terminated by user.\n`);
     }
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ success: true, message: 'Automation process stopped.' }));

@@ -29,6 +29,13 @@ export default function RunBabyRunModal({
     } catch (_) {}
   };
 
+  const handleModalClose = () => {
+    if (isRunning && onStop) {
+      onStop();
+    }
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
@@ -84,7 +91,7 @@ export default function RunBabyRunModal({
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleModalClose}
               className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
               title="Close"
             >
@@ -157,8 +164,8 @@ export default function RunBabyRunModal({
 
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+              onClick={handleModalClose}
+              className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
             >
               Close
             </button>
