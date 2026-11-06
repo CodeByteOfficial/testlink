@@ -16,6 +16,7 @@
     "testlink:task1": "node playwright/testlink_task1.js"
   },
   "dependencies": {
+    "dotenv": "^18.0.9",
     "jszip": "^3.10.1",
     "lucide-react": "^0.344.0",
     "papaparse": "^5.4.1",

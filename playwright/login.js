@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
@@ -29,42 +30,42 @@ if (!testSuites || testSuites.length === 0) {
 // Order suites by id (1, 2, 3...)
 testSuites.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
 
-// 3. HTTP Basic Auth Password (preconfigured with working password):
-let HTTP_AUTH_USERNAME = 'cqtesting';
-let HTTP_AUTH_PASSWORD = 'CqTest@2025';
-
-// Only override from environment if user set a non-placeholder value
-if (process.env.BASIC_AUTH_PASS && !process.env.BASIC_AUTH_PASS.includes('your_')) {
-  HTTP_AUTH_PASSWORD = process.env.BASIC_AUTH_PASS;
-}
-if (process.env.BASIC_AUTH_USER && !process.env.BASIC_AUTH_USER.includes('your_')) {
-  HTTP_AUTH_USERNAME = process.env.BASIC_AUTH_USER;
-}
-
 // ============================================================================
-// ⚙️ FIXED SYSTEM CONFIGURATION
+// ⚙️ SYSTEM CONFIGURATION (LOADED DYNAMICALLY FROM .env FILE)
 // ============================================================================
-const TESTLINK_USER = 'harsh';
-const TESTLINK_PASS = '9ZvSgQc466';
-const TARGET_PROJECT_VALUE = '1';            // CQ:CreditQ
+// 👉 JAB BHI KOI VARIABLE UPDATE KARNA HO:
+// Project root me maujood '.env' file ko edit karein (jaise TARGET_BUILD_ID, 
+// TARGET_BUILD_NAME, TARGET_PLAN_LABEL, etc.). Script bina code change kiye
+// automatically .env file se saari settings read kar legi!
 
-// ============================================================================
-// 🎯 [TEST PLAN CONFIGURATION] - TARGET_PLAN_LABEL
-// ============================================================================
-// 👉 JAB BHI TEST PLAN CHANGE KARNA HO:
-// Aap directly yahan 'TARGET_PLAN_LABEL' ki value update kar sakte hain:
-// Example 1: const TARGET_PLAN_LABEL = 'New Admin Portal';
-// Example 2: const TARGET_PLAN_LABEL = '6.6 Release';
-// (Script automatically Chosen dropdown me se is plan ko search & select kar legi)
-const TARGET_PLAN_LABEL = 'New Admin Portal';
+const HTTP_AUTH_USERNAME = process.env.HTTP_AUTH_USERNAME || process.env.BASIC_AUTH_USER || 'cqtesting';
+const HTTP_AUTH_PASSWORD = process.env.HTTP_AUTH_PASSWORD || process.env.BASIC_AUTH_PASS || 'CqTest@2025';
 
-const TESTER_ID = '9';                       // harsh
-// 👉 OPTIONAL BUILD CONFIGURATION:
-// Agar kisi specific build ko force karna ho to yahan ID ya Name likh sakte hain:
-// Agar null ya empty rakhenge to script Test Plan ke active/latest build ko AUTOMATICALLY detect & select karegi:
-const TARGET_BUILD_ID = null;                // e.g. '92' or null for auto-detect
-const TARGET_BUILD_NAME = null;              // e.g. '6.6 Round _1' or null for auto-detect
-const DELAY_MS = 3000;                       // 3 seconds delay after each step
+const TESTLINK_USER = process.env.TESTLINK_USER || 'harsh';
+const TESTLINK_PASS = process.env.TESTLINK_PASS || '9ZvSgQc466';
+
+const TARGET_PROJECT_VALUE = process.env.TARGET_PROJECT_VALUE || '1';            // CQ:CreditQ
+const TARGET_PLAN_LABEL = process.env.TARGET_PLAN_LABEL || 'New Admin Portal';
+
+const TESTER_ID = process.env.TESTER_ID || '9';                                 // harsh
+
+// Target Build Configuration: Loaded from .env (defaults to '94' and 'Round _1')
+const TARGET_BUILD_ID = process.env.TARGET_BUILD_ID || '94';
+const TARGET_BUILD_NAME = process.env.TARGET_BUILD_NAME || 'Round _1';
+
+const DELAY_MS = Number(process.env.DELAY_MS) || 3000;                          // 3 seconds delay after each step
+
+console.log('\n============================================================');
+console.log('🚀 TESTLINK PLAYWRIGHT AUTOMATION RUNNER');
+console.log('============================================================');
+console.log('📋 Active Environment Config (.env):');
+console.log(`   • Test Project Value : ${TARGET_PROJECT_VALUE} (CQ:CreditQ)`);
+console.log(`   • Test Plan Label    : "${TARGET_PLAN_LABEL}"`);
+console.log(`   • Tester ID / User   : ${TESTER_ID} (${TESTLINK_USER})`);
+console.log(`   • Target Build ID    : ${TARGET_BUILD_ID || 'Auto-detect'}`);
+console.log(`   • Target Build Name  : "${TARGET_BUILD_NAME || 'Auto-detect'}"`);
+console.log(`   • Step Delay         : ${DELAY_MS} ms`);
+console.log('============================================================\n');
 
 // ============================================================================
 // 🛠️ MULTI-FRAME HELPER FUNCTIONS

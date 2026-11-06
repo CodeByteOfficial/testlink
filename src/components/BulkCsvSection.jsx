@@ -690,22 +690,23 @@ export default function BulkCsvSection({ onBackToSingle }) {
                 type="button"
                 onClick={handleDownloadAllIndividualXmls}
                 disabled={isDownloadingAll}
-                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-2.5 px-6 py-3.5 text-xs font-black uppercase tracking-wider text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
+                title="Download all converted XML files individually and unlock 'Run baby run'"
               >
                 {isDownloadingAll ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                    Downloading Individual Files...
+                    <span>Downloading XMLs, Artist...</span>
                   </>
                 ) : downloadedAll ? (
                   <>
-                    <Check className="w-4 h-4 text-slate-950" />
-                    All XMLs Downloaded!
+                    <Check className="w-4 h-4 text-slate-950 stroke-[3]" />
+                    <span>XMLs Downloaded, Artist! 🎨</span>
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4 text-slate-950" />
-                    Download All XML Files (Individual - No ZIP)
+                    <Sparkles className="w-4 h-4 text-slate-950 fill-slate-950" />
+                    <span>I am the artist bro!</span>
                   </>
                 )}
               </button>
@@ -842,13 +843,13 @@ export default function BulkCsvSection({ onBackToSingle }) {
                   }`}>
                     {hasDownloaded ? (
                       <>
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                        Unlocked &bull; Ready to Execute
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                        Unlocked &bull; Ready to Rock &amp; Roll! 🎸
                       </>
                     ) : (
                       <>
                         <Lock className="w-3.5 h-3.5 text-amber-400" />
-                        Locked &bull; Click "Download" to Enable
+                        Locked &bull; Pehle "I am the artist bro!" click karo!
                       </>
                     )}
                   </span>
@@ -861,12 +862,12 @@ export default function BulkCsvSection({ onBackToSingle }) {
 
                 <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
                   {hasDownloaded ? (
-                    <span className="text-emerald-300 font-medium">
-                      XML files download ho chuki hain! Ab aap <strong className="text-white">"Run baby run"</strong> button par click karke automation run kar sakte hain. Script <code className="text-pink-300 bg-slate-800 px-1.5 py-0.5 rounded font-mono">test.json</code> ke saare test suites execute karegi.
+                    <span className="text-emerald-300 font-medium leading-relaxed block">
+                      🎉 <strong>Kamaal kar diya Artist Bro!</strong> Saari XML files successfully download ho chuki hain aur <code className="text-pink-300 bg-slate-800 px-1.5 py-0.5 rounded font-mono">test.json</code> update ho chuka hai. Ab bina ruke neeche <strong className="text-white">"Run baby run"</strong> button dabao aur dekho Playwright kaise TestLink par poora test suite execute karta hai! ⚡🏎️💨
                     </span>
                   ) : (
-                    <span className="text-amber-200/90 font-medium">
-                      Ye button tab tak clickable nahi hoga jab tak aap upar diye gaye <strong className="text-white">"Download All XML Files"</strong> button par click na karein. Files download hone ke turant baad ye button active ho jayega.
+                    <span className="text-amber-200/95 font-medium leading-relaxed block">
+                      🎨 <strong>Arey Artist Sahab!</strong> Thoda sabr karo... Pehle upar diye gaye <strong className="text-white underline decoration-emerald-400 decoration-2">"I am the artist bro!"</strong> button par click karke saari XML files download to karo! Jaise hi files system mein save hongi, yeh automation engine unlock ho jayega aur <strong className="text-pink-300">"Run baby run"</strong> aag laga dega! 🚀🔥
                     </span>
                   )}
                 </p>
@@ -886,7 +887,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                   }`}
                   title={
                     !hasDownloaded
-                      ? 'Pehle "Download All XML Files" button par click karein'
+                      ? 'Arey Artist Bro! Pehle upar "I am the artist bro!" button par click karke XML files download to karo!'
                       : 'Launch automation script: npm run login'
                   }
                 >
