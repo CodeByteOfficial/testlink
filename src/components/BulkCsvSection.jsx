@@ -63,7 +63,8 @@ export default function BulkCsvSection({ onBackToSingle }) {
   const [convertedFiles, setConvertedFiles] = useState([]);
   const [jsonManifest, setJsonManifest] = useState('');
   const [copiedJson, setCopiedJson] = useState(false);
-  const [downloadedZip, setDownloadedZip] = useState(false);
+  const [downloadedAll, setDownloadedAll] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [syncedPath, setSyncedPath] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState(null);
@@ -246,20 +247,12 @@ export default function BulkCsvSection({ onBackToSingle }) {
 
     setConvertedFiles(results);
 
-    // Create JSON manifest without raw xmlContent for clean storage
-    const manifestData = results.map(({ id, originalFileName, xmlFileName, suiteName, format, filePath, totalRecords, status, convertedAt }) => ({
-      id,
-      originalFileName,
-      xmlFileName,
-      suiteName,
-      format,
-      filePath,
-      totalRecords,
-      status,
-      convertedAt
-    }));
+    // test.json only contains the downloaded file paths where the converted XML files are downloaded
+    const downloadedPathsOnly = results
+      .filter(r => r.status === 'success' && r.filePath)
+      .map(r => r.filePath);
 
-    const jsonString = JSON.stringify(manifestData, null, 2);
+    const jsonString = JSON.stringify(downloadedPathsOnly, null, 2);
     setJsonManifest(jsonString);
 
     // Automatically sync updated JSON directly to playwright/tests/test.json
@@ -292,44 +285,34 @@ export default function BulkCsvSection({ onBackToSingle }) {
     return false;
   };
 
-  // Download all XML files as a single ZIP bundle (NO JSON file is downloaded)
-  const handleDownloadZip = async () => {
+  // Download all converted XML files individually (WITHOUT ZIP)
+  const handleDownloadAllIndividualXmls = async () => {
     if (convertedFiles.length === 0) return;
 
+    setIsDownloadingAll(true);
+    setDownloadedAll(false);
+
     try {
-      // 1. Overwrite playwright/tests/test.json dynamically with latest data
+      // 1. Overwrite playwright/tests/test.json dynamically with latest downloaded paths
       await saveManifestToTestJson(jsonManifest);
 
-      // 2. Package ONLY XML files in the ZIP (NO JSON in zip or downloads)
-      const zip = new JSZip();
-      convertedFiles.forEach(file => {
-        if (file.xmlContent) {
-          zip.file(file.xmlFileName, file.xmlContent);
+      // 2. Download each XML file individually with a 250ms stagger (No ZIP!)
+      const successfulFiles = convertedFiles.filter(f => f.xmlContent);
+      for (let i = 0; i < successfulFiles.length; i++) {
+        const item = successfulFiles[i];
+        downloadXmlFile(item.xmlContent, item.xmlFileName);
+        if (i < successfulFiles.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 250));
         }
-      });
+      }
 
-      // Generate ZIP blob
-      const blob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'DEFLATE',
-        compressionOptions: { level: 6 }
-      });
-
-      // Trigger download for XMLs ZIP
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `testlink_xmls_${Date.now()}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      setDownloadedZip(true);
-      setTimeout(() => setDownloadedZip(false), 3000);
+      setDownloadedAll(true);
+      setTimeout(() => setDownloadedAll(false), 3000);
     } catch (err) {
-      console.error('Failed to create ZIP', err);
-      setError('Failed to generate ZIP download: ' + err.message);
+      console.error('Failed to download individual XML files', err);
+      setError('Failed to download individual XML files: ' + err.message);
+    } finally {
+      setIsDownloadingAll(false);
     }
   };
 
@@ -566,18 +549,24 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={handleDownloadZip}
-                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                onClick={handleDownloadAllIndividualXmls}
+                disabled={isDownloadingAll}
+                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
-                {downloadedZip ? (
+                {isDownloadingAll ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                    Downloading Individual Files...
+                  </>
+                ) : downloadedAll ? (
                   <>
                     <Check className="w-4 h-4 text-slate-950" />
-                    XMLs Downloaded!
+                    All XMLs Downloaded!
                   </>
                 ) : (
                   <>
-                    <FolderArchive className="w-4 h-4 text-slate-950" />
-                    Download All XMLs (ZIP)
+                    <Download className="w-4 h-4 text-slate-950" />
+                    Download All XML Files (Individual - No ZIP)
                   </>
                 )}
               </button>
@@ -609,11 +598,11 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
-                <strong>Dynamic JSON Sync Active:</strong> JSON data is written directly to <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-800">playwright\tests\test.json</code>. No file is downloaded to your browser.
+                <strong>Dynamic Path Storage Active:</strong> <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-800">playwright\tests\test.json</code> strictly contains <strong>only the downloaded XML file paths</strong>. No ZIP or JSON file is downloaded in the browser.
               </span>
             </div>
             <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full">
-              Auto-Overwrites on Download
+              Overwrites on Every Download
             </span>
           </div>
 
@@ -623,7 +612,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Converted XML Files ({convertedFiles.length})
               </h4>
-              <span className="text-[11px] text-slate-500">Click individual download or use bulk XMLs ZIP above</span>
+              <span className="text-[11px] text-slate-500">Each file downloads as an individual .xml file (No ZIP)</span>
             </div>
 
             <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
@@ -665,7 +654,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                 <span className="text-[10px] text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.2 rounded">
                   ● Dynamically Overwrites
                 </span>
-                <span className="text-[10px] text-slate-500">({convertedFiles.length} file entries)</span>
+                <span className="text-[10px] text-slate-500">({convertedFiles.length} downloaded paths)</span>
               </div>
 
               <div className="flex items-center gap-2">
