@@ -59,7 +59,11 @@ const TARGET_PROJECT_VALUE = '1';            // CQ:CreditQ
 const TARGET_PLAN_LABEL = 'New Admin Portal';
 
 const TESTER_ID = '9';                       // harsh
-const BUILD_ID = '92';                       // 6.6 Round _1
+// 👉 OPTIONAL BUILD CONFIGURATION:
+// Agar kisi specific build ko force karna ho to yahan ID ya Name likh sakte hain:
+// Agar null ya empty rakhenge to script Test Plan ke active/latest build ko AUTOMATICALLY detect & select karegi:
+const TARGET_BUILD_ID = null;                // e.g. '92' or null for auto-detect
+const TARGET_BUILD_NAME = null;              // e.g. '6.6 Round _1' or null for auto-detect
 const DELAY_MS = 3000;                       // 3 seconds delay after each step
 
 // ============================================================================
@@ -720,13 +724,63 @@ function getTestCaseCountFromFile(filePath) {
       await waitStep(page, `Suite ID ${suiteId} - Step 3.14: Tester Selected`);
 
       // ------------------------------------------------------------------------
-      // STEP 3.15: Select Build "6.6 Round _1" (value="92")
+      // STEP 3.15: Dynamically Select Build for Active Test Plan
       // ------------------------------------------------------------------------
-      console.log(`\n[Suite ID ${suiteId} - Step 3.15] Selecting Build value="${BUILD_ID}" (6.6 Round _1) ...`);
+      console.log(`\n[Suite ID ${suiteId} - Step 3.15] Resolving & Selecting Build for active Test Plan ("${TARGET_PLAN_LABEL}") ...`);
       const buildSelect = await findInFrames(page, 'select[name="build_id"], select#build_id');
+      let activeBuildId = '';
+      let activeBuildName = '';
+
       if (buildSelect) {
-        await buildSelect.selectOption(BUILD_ID);
-        console.log('   ✅ Build selected: 6.6 Round _1 (value: 92)');
+        // Read all available options from the build dropdown
+        const availableOptions = await buildSelect.evaluate(sel => {
+          return Array.from(sel.options).map(o => ({
+            value: o.value ? o.value.trim() : '',
+            text: o.text ? o.text.trim() : '',
+            selected: o.selected
+          }));
+        });
+
+        console.log(`   📋 Found ${availableOptions.length} build options:`, availableOptions.map(b => `"${b.text}" (${b.value})`).join(', '));
+
+        // Filter valid options (exclude empty, 0, or placeholder labels)
+        const validOptions = availableOptions.filter(b => b.value && b.value !== '0' && !b.text.toLowerCase().includes('select'));
+
+        let chosenOption = null;
+
+        // 1. If explicit TARGET_BUILD_ID is configured and exists in options
+        if (TARGET_BUILD_ID) {
+          chosenOption = validOptions.find(b => b.value === String(TARGET_BUILD_ID));
+        }
+
+        // 2. If explicit TARGET_BUILD_NAME is configured and matches text
+        if (!chosenOption && TARGET_BUILD_NAME) {
+          chosenOption = validOptions.find(b => b.text.toLowerCase().includes(TARGET_BUILD_NAME.toLowerCase()));
+        }
+
+        // 3. If an option is already selected
+        if (!chosenOption) {
+          chosenOption = validOptions.find(b => b.selected);
+        }
+
+        // 4. Default to the latest (last) or first valid build in the list
+        if (!chosenOption && validOptions.length > 0) {
+          chosenOption = validOptions[validOptions.length - 1];
+        }
+
+        // 5. Fallback to any option
+        if (!chosenOption && availableOptions.length > 0) {
+          chosenOption = availableOptions[0];
+        }
+
+        if (chosenOption && chosenOption.value) {
+          activeBuildId = chosenOption.value;
+          activeBuildName = chosenOption.text;
+          await buildSelect.selectOption(chosenOption.value);
+          console.log(`   ✅ Build dynamically selected: "${activeBuildName}" (value: ${activeBuildId})`);
+        } else {
+          console.warn(`   ⚠️ No valid build options found; proceeding with existing dropdown state.`);
+        }
       }
       await waitStep(page, `Suite ID ${suiteId} - Step 3.15: Build Selected`);
 
@@ -773,9 +827,10 @@ function getTestCaseCountFromFile(filePath) {
       await waitStep(page, `Suite ID ${suiteId} - Step 3.21: Execute Tests Page Loaded`);
 
       // ------------------------------------------------------------------------
-      // STEP 3.22: Select "Build to execute" -> 6.6 Round _1 (setting_build / 92)
+      // STEP 3.22: Select "Build to execute" (setting_build)
       // ------------------------------------------------------------------------
-      console.log(`\n[Suite ID ${suiteId} - Step 3.22] Verifying & Selecting "Build to execute" -> "6.6 Round _1" (Build ID: ${BUILD_ID}) ...`);
+      const targetBuildDisplay = activeBuildName || 'Active Build';
+      console.log(`\n[Suite ID ${suiteId} - Step 3.22] Verifying & Selecting "Build to execute" -> "${targetBuildDisplay}" (Build ID: ${activeBuildId || 'Auto'}) ...`);
       let roundSelected = false;
 
       for (const frame of [page.frame({ name: 'treeframe' }), page.frame({ name: 'workframe' }), ...page.frames()].filter(Boolean)) {
@@ -788,8 +843,12 @@ function getTestCaseCountFromFile(filePath) {
             const currentText = await buildSelect.first().evaluate(sel => sel.options[sel.selectedIndex]?.text?.trim() || '').catch(() => '');
             const chosenText = await buildRow.locator('.chosen-single span').first().innerText().catch(() => '');
 
-            if (currentValue === BUILD_ID || currentText.includes('Round _1') || currentText.includes('Round_1') || chosenText.includes('Round _1') || chosenText.includes('Round_1')) {
-              console.log(`   ✅ "6.6 Round _1" is ALREADY selected and active! (Value: ${currentValue})`);
+            const isAlreadyActive = (activeBuildId && currentValue === activeBuildId) ||
+              (activeBuildName && (currentText.includes(activeBuildName) || chosenText.includes(activeBuildName))) ||
+              (!activeBuildId && (currentValue || chosenText));
+
+            if (isAlreadyActive && (currentValue || chosenText)) {
+              console.log(`   ✅ Build "${chosenText || currentText}" is ALREADY selected and active! (Value: ${currentValue})`);
               roundSelected = true;
               break;
             }
@@ -801,32 +860,43 @@ function getTestCaseCountFromFile(filePath) {
               await page.waitForTimeout(400);
 
               const chosenSearch = frame.locator('.chosen-with-drop .chosen-search-input, tr:has-text("Build to execute") .chosen-search-input').first();
-              if (await chosenSearch.isVisible().catch(() => false)) {
-                await chosenSearch.fill('Round _1');
+              if (await chosenSearch.isVisible().catch(() => false) && activeBuildName) {
+                await chosenSearch.fill(activeBuildName);
                 await page.waitForTimeout(300);
               }
 
-              const chosenResult = frame.locator('.chosen-with-drop .chosen-results li.active-result, .chosen-results li.active-result').filter({ hasText: /Round.*1/i }).first();
-              if (await chosenResult.count().catch(() => 0) > 0) {
-                await chosenResult.click({ force: true });
+              const chosenResults = frame.locator('.chosen-with-drop .chosen-results li.active-result, .chosen-results li.active-result');
+              if (await chosenResults.count().catch(() => 0) > 0) {
+                let chosenTarget = null;
+                if (activeBuildName) {
+                  chosenTarget = chosenResults.filter({ hasText: activeBuildName }).first();
+                }
+                if (!chosenTarget || (await chosenTarget.count().catch(() => 0)) === 0) {
+                  chosenTarget = chosenResults.first();
+                }
+                const selectedResultText = await chosenTarget.innerText().catch(() => '');
+                await chosenTarget.click({ force: true });
                 chosenUpdated = true;
                 roundSelected = true;
-                console.log(`   ✅ Selected "6.6 Round _1" via Chosen UI`);
+                console.log(`   ✅ Selected build "${selectedResultText.trim()}" via Chosen UI`);
               }
             }
 
             if (!chosenUpdated) {
-              await buildSelect.first().selectOption(BUILD_ID, { force: true }).catch(() => { });
-              await buildSelect.first().evaluate((sel, val) => {
-                sel.value = val;
-                if (typeof $ !== 'undefined') {
-                  $(sel).trigger('chosen:updated');
-                }
-                if (sel.onchange) sel.onchange();
-                if (sel.form) sel.form.submit();
-              }, BUILD_ID).catch(() => { });
-              roundSelected = true;
-              console.log(`   ✅ Selected "6.6 Round _1" via selectOption & submitted form`);
+              const valToSelect = activeBuildId || currentValue;
+              if (valToSelect) {
+                await buildSelect.first().selectOption(valToSelect, { force: true }).catch(() => { });
+                await buildSelect.first().evaluate((sel, val) => {
+                  sel.value = val;
+                  if (typeof $ !== 'undefined') {
+                    $(sel).trigger('chosen:updated');
+                  }
+                  if (sel.onchange) sel.onchange();
+                  if (sel.form) sel.form.submit();
+                }, valToSelect).catch(() => { });
+                roundSelected = true;
+                console.log(`   ✅ Selected build value "${valToSelect}" via selectOption & submitted form`);
+              }
             }
 
             await page.waitForTimeout(3000);
@@ -835,7 +905,7 @@ function getTestCaseCountFromFile(filePath) {
         } catch (_) { }
       }
 
-      await waitStep(page, `Suite ID ${suiteId} - Step 3.22: Round 1 Verified/Selected`);
+      await waitStep(page, `Suite ID ${suiteId} - Step 3.22: Build to execute Verified/Selected`);
 
       // ------------------------------------------------------------------------
       // STEP 3.23: EXPAND TREE FOR ROOT & TEST SUITE currentSuiteName
