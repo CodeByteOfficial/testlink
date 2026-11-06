@@ -202,7 +202,7 @@ export default function UploadSection({
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all shadow-2xs"
               >
                 <Files className="w-4 h-4 text-indigo-600" />
-                Bulk CSV Upload
+                Bulk Upload (CSV, Excel, JSON)
               </button>
             )}
           </div>

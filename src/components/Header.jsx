@@ -54,9 +54,10 @@ export default function Header({ onLoadSample, hasUploadedFile, activeMode = 'si
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-indigo-600'
                   }`}
+                  title="Bulk conversion for CSV, XLSX, XLS, TSV, and JSON files"
                 >
                   <Files className="w-3.5 h-3.5" />
-                  Bulk CSV
+                  Bulk Upload
                 </button>
               </div>
             )}

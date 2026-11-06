@@ -11,13 +11,20 @@ import {
   FileCode, 
   Check, 
   Copy, 
-  FolderArchive,
-  FolderOpen,
-  ArrowRight
+  FolderArchive, 
+  FolderOpen, 
+  ArrowRight,
+  FileSpreadsheet,
+  FileText
 } from 'lucide-react';
-import Papa from 'papaparse';
 import JSZip from 'jszip';
-import { mapHeadersToXmlTags, generateCombinedXml, downloadXmlFile } from '../utils/xmlGenerator';
+import { 
+  parseUniversalFile, 
+  SUPPORTED_EXTENSIONS, 
+  ACCEPT_FILE_TYPES, 
+  getFileFormat 
+} from '../utils/fileParser';
+import { generateCombinedXml, downloadXmlFile } from '../utils/xmlGenerator';
 
 function formatBytes(bytes, decimals = 2) {
   if (!+bytes) return '0 Bytes';
@@ -26,6 +33,21 @@ function formatBytes(bytes, decimals = 2) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
+function getFormatBadge(fmt) {
+  switch (fmt?.toLowerCase()) {
+    case 'xlsx':
+    case 'xls':
+      return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase">{fmt} Excel</span>;
+    case 'json':
+      return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 uppercase">JSON</span>;
+    case 'tsv':
+    case 'tab':
+      return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 uppercase">TSV</span>;
+    default:
+      return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 uppercase">CSV</span>;
+  }
 }
 
 export default function BulkCsvSection({ onBackToSingle }) {
@@ -37,6 +59,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
   const [isConverting, setIsConverting] = useState(false);
   const [isConverted, setIsConverted] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentProcessingFile, setCurrentProcessingFile] = useState('');
   const [convertedFiles, setConvertedFiles] = useState([]);
   const [jsonManifest, setJsonManifest] = useState('');
   const [copiedJson, setCopiedJson] = useState(false);
@@ -79,20 +102,31 @@ export default function BulkCsvSection({ onBackToSingle }) {
     setConvertedFiles([]);
     setJsonManifest('');
 
-    const csvFiles = newFiles.filter(f => {
-      const name = f.name.toLowerCase();
-      return name.endsWith('.csv') || name.endsWith('.txt');
+    const validFiles = [];
+    const invalidNames = [];
+
+    newFiles.forEach(f => {
+      const ext = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+      if (SUPPORTED_EXTENSIONS.includes(ext)) {
+        validFiles.push(f);
+      } else {
+        invalidNames.push(f.name);
+      }
     });
 
-    if (csvFiles.length === 0) {
-      setError('Please upload valid CSV (.csv) files.');
+    if (invalidNames.length > 0 && validFiles.length === 0) {
+      setError(`Unsupported file format. Please upload supported files (${SUPPORTED_EXTENSIONS.join(', ')}).`);
       return;
+    }
+
+    if (invalidNames.length > 0) {
+      setError(`Some files were skipped due to unsupported formats: ${invalidNames.slice(0, 3).join(', ')}${invalidNames.length > 3 ? '...' : ''}`);
     }
 
     setFiles(prev => {
       // Avoid exact duplicates by filename
       const existingNames = new Set(prev.map(f => f.name));
-      const filtered = csvFiles.filter(f => !existingNames.has(f.name));
+      const filtered = validFiles.filter(f => !existingNames.has(f.name));
       return [...prev, ...filtered];
     });
   };
@@ -113,12 +147,13 @@ export default function BulkCsvSection({ onBackToSingle }) {
     setJsonManifest('');
     setError(null);
     setProgress(0);
+    setCurrentProcessingFile('');
   };
 
-  // Convert all uploaded CSVs to XML
+  // Convert all uploaded files (CSV, XLSX, XLS, TSV, JSON, TXT) to XML
   const handleBulkConvert = async () => {
     if (files.length === 0) {
-      setError('Please upload at least one CSV file.');
+      setError('Please upload at least one file to convert.');
       return;
     }
 
@@ -134,18 +169,15 @@ export default function BulkCsvSection({ onBackToSingle }) {
       const baseName = currentFile.name.replace(/\.[^/.]+$/, '');
       const xmlName = `${baseName}.xml`;
       const fullFilePath = `${normalizedBasePath}\\${xmlName}`;
+      const format = getFileFormat(currentFile.name);
+
+      setCurrentProcessingFile(currentFile.name);
 
       try {
-        const textContent = await currentFile.text();
-        const parsed = Papa.parse(textContent, {
-          header: true,
-          skipEmptyLines: 'greedy',
-          dynamicTyping: false
-        });
-
-        const rows = parsed.data || [];
-        const headers = parsed.meta.fields || [];
-        const headerMappings = mapHeadersToXmlTags(headers);
+        // Universal parser handles CSV, XLSX, XLS, TSV, JSON, TXT
+        const parsedResult = await parseUniversalFile(currentFile);
+        const rows = parsedResult.data || [];
+        const headerMappings = parsedResult.headerMappings || [];
         const xmlContent = generateCombinedXml(rows, headerMappings, 'records', 'record');
 
         results.push({
@@ -153,8 +185,9 @@ export default function BulkCsvSection({ onBackToSingle }) {
           originalFileName: currentFile.name,
           xmlFileName: xmlName,
           suiteName: baseName,
+          format: format.toUpperCase(),
           filePath: fullFilePath,
-          totalRecords: rows.length,
+          totalRecords: parsedResult.totalRecords || rows.length,
           xmlContent: xmlContent,
           status: 'success',
           convertedAt: new Date().toISOString()
@@ -165,6 +198,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
           originalFileName: currentFile.name,
           xmlFileName: xmlName,
           suiteName: baseName,
+          format: format.toUpperCase(),
           filePath: fullFilePath,
           totalRecords: 0,
           xmlContent: '',
@@ -180,11 +214,12 @@ export default function BulkCsvSection({ onBackToSingle }) {
     setConvertedFiles(results);
 
     // Create JSON manifest without raw xmlContent for clean storage
-    const manifestData = results.map(({ id, originalFileName, xmlFileName, suiteName, filePath, totalRecords, status, convertedAt }) => ({
+    const manifestData = results.map(({ id, originalFileName, xmlFileName, suiteName, format, filePath, totalRecords, status, convertedAt }) => ({
       id,
       originalFileName,
       xmlFileName,
       suiteName,
+      format,
       filePath,
       totalRecords,
       status,
@@ -194,6 +229,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
     const jsonString = JSON.stringify(manifestData, null, 2);
     setJsonManifest(jsonString);
 
+    setCurrentProcessingFile('');
     setIsConverting(false);
     setIsConverted(true);
   };
@@ -283,12 +319,21 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <Files className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              Bulk CSV to XML Converter
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900">
+                Bulk Multi-Format to XML Converter
+              </h2>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-600 text-white">Bulk Mode</span>
-            </h2>
-            <p className="text-xs text-slate-600">
-              Upload multiple CSV files, batch-convert to TestLink XML format, and download all files with a JSON path mapping manifest.
+              <div className="flex items-center gap-1">
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-100 text-blue-700 font-mono">CSV</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 font-mono">XLSX</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-green-100 text-green-700 font-mono">XLS</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-700 font-mono">TSV</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-100 text-purple-700 font-mono">JSON</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Upload multiple files across any supported format, batch-convert to TestLink XML, and export a JSON path mapping manifest.
             </p>
           </div>
         </div>
@@ -343,7 +388,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".csv, .txt, text/csv"
+          accept={ACCEPT_FILE_TYPES}
           onChange={handleFileInputChange}
           className="hidden"
         />
@@ -357,11 +402,11 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <span className="font-semibold text-slate-900 text-sm">
               Click to browse
             </span>
-            <span className="text-slate-600 text-sm"> or drag and drop multiple CSV files here</span>
+            <span className="text-slate-600 text-sm"> or drag and drop multiple files here</span>
           </div>
 
           <p className="text-xs text-slate-500">
-            Select as many <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-mono">.csv</code> files as you want (e.g. <code className="font-mono text-slate-700">NEWCQ-4859_Javed.csv</code>)
+            Supports <strong className="text-slate-700">.csv</strong>, <strong className="text-slate-700">.xlsx</strong>, <strong className="text-slate-700">.xls</strong>, <strong className="text-slate-700">.tsv</strong>, <strong className="text-slate-700">.json</strong>, and <strong className="text-slate-700">.txt</strong>
           </p>
         </div>
       </div>
@@ -380,7 +425,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <div>
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Files className="w-4 h-4 text-indigo-600" />
-                Uploaded CSV Files ({files.length})
+                Uploaded Files ({files.length})
               </h3>
               <p className="text-xs text-slate-500">Ready for batch conversion to XML</p>
             </div>
@@ -416,9 +461,17 @@ export default function BulkCsvSection({ onBackToSingle }) {
             </div>
           </div>
 
+          {isConverting && currentProcessingFile && (
+            <div className="px-5 py-2.5 bg-indigo-50/80 border-b border-indigo-100 flex items-center gap-2 text-xs text-indigo-900 font-medium">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+              <span>Processing: <strong className="font-mono">{currentProcessingFile}</strong></span>
+            </div>
+          )}
+
           <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
             {files.map((f, idx) => {
               const base = f.name.replace(/\.[^/.]+$/, '');
+              const fmt = getFileFormat(f.name);
               return (
                 <div key={idx} className="p-3.5 sm:px-5 flex items-center justify-between text-xs hover:bg-slate-50/70 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
@@ -426,8 +479,11 @@ export default function BulkCsvSection({ onBackToSingle }) {
                       {idx + 1}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-slate-800 truncate">{f.name}</div>
-                      <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-800 truncate">{f.name}</span>
+                        {getFormatBadge(fmt)}
+                      </div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
                         <span>{formatBytes(f.size)}</span>
                         <span>&bull;</span>
                         <span className="font-mono text-indigo-700">Suite: {base}</span>
@@ -459,11 +515,11 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <div className="space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                Successfully Converted {convertedFiles.length} CSV Files to XML
+                Successfully Converted {convertedFiles.length} Files to XML
               </div>
               <h3 className="text-xl font-bold">Bulk Download &amp; JSON Manifest Ready</h3>
               <p className="text-xs text-slate-300 max-w-xl">
-                All XML files have been formatted with TestLink XML schema. Click below to download all XML files and their corresponding JSON path mapping file.
+                All files have been converted into TestLink-compatible XML schema. Click below to download all XML files along with their JSON path mapping file.
               </p>
             </div>
 
@@ -471,7 +527,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
               <button
                 type="button"
                 onClick={handleDownloadZip}
-                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-md transition-all active:scale-95"
+                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 {downloadedZip ? (
                   <>
@@ -489,7 +545,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
               <button
                 type="button"
                 onClick={handleDownloadJsonOnly}
-                className="inline-flex items-center gap-2 px-4 py-3 text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all"
+                className="inline-flex items-center gap-2 px-4 py-3 text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all cursor-pointer"
               >
                 <FileJson className="w-4 h-4 text-amber-300" />
                 Download JSON Manifest (.json)
@@ -513,6 +569,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                     <div className="font-semibold text-slate-900 flex items-center gap-2">
                       <FileCode className="w-4 h-4 text-indigo-600" />
                       <span>{item.xmlFileName}</span>
+                      {getFormatBadge(item.format)}
                       <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-100 text-emerald-800">
                         {item.totalRecords} records
                       </span>
@@ -548,7 +605,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                 <button
                   type="button"
                   onClick={handleCopyJson}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs transition-colors cursor-pointer"
                 >
                   {copiedJson ? (
                     <>
