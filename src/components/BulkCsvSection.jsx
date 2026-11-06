@@ -176,38 +176,69 @@ export default function BulkCsvSection({ onBackToSingle }) {
       setCurrentProcessingFile(currentFile.name);
 
       try {
-        // Universal parser handles CSV, XLSX, XLS, TSV, JSON, TXT
+        // Universal parser handles CSV, XLSX, XLS, TSV, JSON, TXT, and XML
         const parsedResult = await parseUniversalFile(currentFile);
-        const rows = parsedResult.data || [];
-        const headerMappings = parsedResult.headerMappings || [];
-        const xmlContent = generateCombinedXml(rows, headerMappings, 'records', 'record');
+        let xmlContent = '';
+
+        if (parsedResult.isAlreadyXml) {
+          xmlContent = parsedResult.rawXml || (await currentFile.text());
+        } else {
+          const rows = parsedResult.data || [];
+          const headerMappings = parsedResult.headerMappings || [];
+          xmlContent = generateCombinedXml(rows, headerMappings, 'records', 'record');
+        }
 
         results.push({
           id: i + 1,
           originalFileName: currentFile.name,
           xmlFileName: xmlName,
           suiteName: baseName,
-          format: format.toUpperCase(),
+          format: (parsedResult.isAlreadyXml ? 'XML' : format).toUpperCase(),
           filePath: fullFilePath,
-          totalRecords: parsedResult.totalRecords || rows.length,
+          totalRecords: parsedResult.totalRecords || 1,
           xmlContent: xmlContent,
           status: 'success',
           convertedAt: new Date().toISOString()
         });
       } catch (err) {
-        results.push({
-          id: i + 1,
-          originalFileName: currentFile.name,
-          xmlFileName: xmlName,
-          suiteName: baseName,
-          format: format.toUpperCase(),
-          filePath: fullFilePath,
-          totalRecords: 0,
-          xmlContent: '',
-          status: 'error',
-          error: err.message,
-          convertedAt: new Date().toISOString()
-        });
+        // Fallback recovery if file is already XML content disguised under another extension
+        let fallbackXml = '';
+        try {
+          const text = await currentFile.text();
+          if (text.includes('<?xml') || text.includes('<testcase') || text.includes('<record')) {
+            fallbackXml = text.replace(/^\uFEFF/, '').trim();
+          }
+        } catch (_) {}
+
+        if (fallbackXml) {
+          const tcCount = (fallbackXml.match(/<testcase\b/gi) || []).length || (fallbackXml.match(/<record\b/gi) || []).length || 1;
+          results.push({
+            id: i + 1,
+            originalFileName: currentFile.name,
+            xmlFileName: xmlName,
+            suiteName: baseName,
+            format: 'XML',
+            filePath: fullFilePath,
+            totalRecords: tcCount,
+            xmlContent: fallbackXml,
+            status: 'success',
+            convertedAt: new Date().toISOString()
+          });
+        } else {
+          results.push({
+            id: i + 1,
+            originalFileName: currentFile.name,
+            xmlFileName: xmlName,
+            suiteName: baseName,
+            format: format.toUpperCase(),
+            filePath: fullFilePath,
+            totalRecords: 0,
+            xmlContent: '',
+            status: 'error',
+            error: err.message,
+            convertedAt: new Date().toISOString()
+          });
+        }
       }
 
       setProgress(Math.round(((i + 1) / files.length) * 100));

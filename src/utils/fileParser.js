@@ -1,14 +1,14 @@
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { mapHeadersToXmlTags } from './xmlGenerator';
+import { mapHeadersToXmlTags } from './xmlGenerator.js';
 
-export const SUPPORTED_EXTENSIONS = ['.csv', '.xlsx', '.xls', '.tsv', '.tab', '.json', '.txt'];
-export const ACCEPT_FILE_TYPES = '.csv, .xlsx, .xls, .tsv, .tab, .json, .txt, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/json, text/plain';
+export const SUPPORTED_EXTENSIONS = ['.csv', '.xlsx', '.xls', '.tsv', '.tab', '.json', '.txt', '.xml'];
+export const ACCEPT_FILE_TYPES = '.csv, .xlsx, .xls, .tsv, .tab, .json, .txt, .xml, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/json, text/plain, text/xml, application/xml';
 
 /**
  * Determine the file format from filename extension
  * @param {string} filename 
- * @returns {'csv'|'xlsx'|'xls'|'tsv'|'json'|'unknown'}
+ * @returns {'csv'|'xlsx'|'xls'|'tsv'|'json'|'xml'|'unknown'}
  */
 export function getFileFormat(filename = '') {
   const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
@@ -16,12 +16,43 @@ export function getFileFormat(filename = '') {
   if (ext === '.xls') return 'xls';
   if (ext === '.tsv' || ext === '.tab') return 'tsv';
   if (ext === '.json') return 'json';
+  if (ext === '.xml') return 'xml';
   if (ext === '.csv' || ext === '.txt') return 'csv';
   return 'unknown';
 }
 
 /**
- * Universal File Parser supporting CSV, XLSX, XLS, TSV, JSON, and TXT
+ * Parses a pre-existing XML file (or file named .xlsx/.csv that contains raw XML)
+ */
+export async function parseXmlFile(file) {
+  const text = await file.text();
+  const cleanText = text.replace(/^\uFEFF/, '').trim();
+
+  // Count test cases or records
+  const testcaseMatches = cleanText.match(/<testcase\b/gi) || [];
+  const recordMatches = cleanText.match(/<record\b/gi) || [];
+  const totalRecords = testcaseMatches.length || recordMatches.length || 1;
+
+  return {
+    data: [],
+    headers: ['Test_Cases'],
+    headerMappings: [{ original: 'Test_Cases', sanitized: 'Test_Cases' }],
+    totalRecords,
+    totalColumns: 1,
+    previewRows: [],
+    warnings: [],
+    errors: [],
+    fileFormat: 'xml',
+    isAlreadyXml: true,
+    rawXml: cleanText,
+    sheetNames: [],
+    selectedSheet: null,
+    workbook: null
+  };
+}
+
+/**
+ * Universal File Parser supporting CSV, XLSX, XLS, TSV, JSON, TXT, and XML
  * 
  * @param {File} file 
  * @param {string|null} sheetName Optional specific sheet name for Excel files
@@ -37,7 +68,9 @@ export function getFileFormat(filename = '') {
  *   fileFormat: string,
  *   sheetNames: string[],
  *   selectedSheet: string|null,
- *   workbook: any|null
+ *   workbook: any|null,
+ *   isAlreadyXml?: boolean,
+ *   rawXml?: string
  * }>}
  */
 export async function parseUniversalFile(file, sheetName = null) {
@@ -49,9 +82,28 @@ export async function parseUniversalFile(file, sheetName = null) {
     throw new Error('Uploaded file is completely empty (0 bytes). Please upload a valid file.');
   }
 
+  // Check if file content is already raw XML (regardless of file extension, e.g. 4869.xlsx with XML content)
+  try {
+    const slice = file.slice(0, 500);
+    const headerText = await slice.text();
+    const cleanHeader = headerText.replace(/^\uFEFF/, '').trimStart();
+
+    if (
+      cleanHeader.startsWith('<?xml') ||
+      cleanHeader.startsWith('<testcases') ||
+      cleanHeader.startsWith('<records') ||
+      cleanHeader.startsWith('<testsuite') ||
+      cleanHeader.startsWith('<suite')
+    ) {
+      return parseXmlFile(file);
+    }
+  } catch (_) {}
+
   const format = getFileFormat(file.name);
 
-  if (format === 'xlsx' || format === 'xls') {
+  if (format === 'xml') {
+    return parseXmlFile(file);
+  } else if (format === 'xlsx' || format === 'xls') {
     return parseExcelFile(file, sheetName, format);
   } else if (format === 'json') {
     return parseJsonFile(file);
