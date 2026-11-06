@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { sanitizeTagName, mapHeadersToXmlTags, escapeXml, generateCombinedXml } from '../src/utils/xmlGenerator.js';
+import { sanitizeTagName, mapHeadersToXmlTags, escapeXml, generateCombinedXml, generateTestLinkXml } from '../src/utils/xmlGenerator.js';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
@@ -96,5 +96,45 @@ assert.ok(jsonXml.includes('<item>'), 'Contains custom item tag');
 assert.ok(jsonXml.includes('<id>001</id>'), 'Preserves string ID with leading zeros');
 assert.ok(jsonXml.includes('<name>Item &amp; One</name>'), 'Escapes & in JSON data');
 console.log('✓ Passed JSON to Single XML test');
+
+// Test 6: TestLink XML Schema Format (<testcases>)
+console.log('\nTest 6: TestLink XML Schema Format (<testcases>)');
+const testlinkRows = [
+  {
+    Name: 'TC-01',
+    Importance: 'High',
+    Summary: 'Verify name with exactly 30 characters is accepted',
+    Preconditions: 'User is on Registration page',
+    Actions: 'Enter a valid name containing exactly 30 characters',
+    'Expected Result': 'Name is accepted and no character-limit validation error is displayed'
+  },
+  {
+    Name: 'TC-02',
+    Importance: 'Medium',
+    Summary: 'Verify validation when entering the 31st character',
+    Preconditions: 'User is on Registration page',
+    Actions: 'Enter a name with 30 characters, then enter the 31st character',
+    'Expected Result': 'Validation message is displayed'
+  }
+];
+
+const testlinkXml = generateTestLinkXml(testlinkRows);
+assert.ok(testlinkXml.includes('<testcases>'), 'Contains <testcases> root tag');
+assert.ok(testlinkXml.includes('<testcase internalid="" name="TC-01">'), 'Contains <testcase internalid="" name="TC-01">');
+assert.ok(testlinkXml.includes('<node_order><![CDATA[]]></node_order>'), 'Contains empty node_order CDATA');
+assert.ok(testlinkXml.includes('<externalid><![CDATA[]]></externalid>'), 'Contains empty externalid CDATA');
+assert.ok(testlinkXml.includes('<version><![CDATA[]]></version>'), 'Contains empty version CDATA');
+assert.ok(testlinkXml.includes('<summary><![CDATA[Verify name with exactly 30 characters is accepted]]></summary>'), 'Contains summary CDATA');
+assert.ok(testlinkXml.includes('<preconditions><![CDATA[User is on Registration page]]></preconditions>'), 'Contains preconditions CDATA');
+assert.ok(testlinkXml.includes('<execution_type><![CDATA[1]]></execution_type>'), 'Contains execution_type CDATA');
+assert.ok(testlinkXml.includes('<importance><![CDATA[3]]></importance>'), 'Maps High importance to 3 CDATA');
+assert.ok(testlinkXml.includes('<importance><![CDATA[2]]></importance>'), 'Maps Medium importance to 2 CDATA');
+assert.ok(testlinkXml.includes('<steps>'), 'Contains <steps> tag');
+assert.ok(testlinkXml.includes('<step_number><![CDATA[1]]></step_number>'), 'Contains step_number CDATA');
+assert.ok(testlinkXml.includes('<actions><![CDATA[Enter a valid name containing exactly 30 characters]]></actions>'), 'Contains actions CDATA');
+assert.ok(testlinkXml.includes('<expectedresults><![CDATA[Name is accepted and no character-limit validation error is displayed]]></expectedresults>'), 'Contains expectedresults CDATA');
+assert.ok(testlinkXml.includes('</testcase>'), 'Closes testcase');
+assert.ok(testlinkXml.includes('</testcases>'), 'Closes testcases');
+console.log('✓ Passed TestLink XML Schema Format (<testcases>) test');
 
 console.log('\nAll Multi-Format Universal Tests Passed Successfully!');

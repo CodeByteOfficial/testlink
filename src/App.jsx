@@ -7,7 +7,7 @@ import ConversionProgress from './components/ConversionProgress';
 import ResultsSection from './components/ResultsSection';
 import TestLinkTransferModal from './components/TestLinkTransferModal';
 import { parseUniversalFile, getSampleCsvContent } from './utils/fileParser';
-import { generateCombinedXml } from './utils/xmlGenerator';
+import { generateCombinedXml, generateTestLinkXml } from './utils/xmlGenerator';
 import { ShieldCheck, HelpCircle } from 'lucide-react';
 
 export default function App() {
@@ -19,9 +19,9 @@ export default function App() {
   const [parsedData, setParsedData] = useState(null);
   const [error, setError] = useState(null);
 
-  // XML tag naming configuration
-  const [rootTag, setRootTag] = useState('records');
-  const [recordTag, setRecordTag] = useState('record');
+  // XML tag naming configuration (Default TestLink Schema)
+  const [rootTag, setRootTag] = useState('testcases');
+  const [recordTag, setRecordTag] = useState('testcase');
 
   // Conversion states
   const [isConverting, setIsConverting] = useState(false);
@@ -154,8 +154,10 @@ export default function App() {
       if (currentIndex < total) {
         setTimeout(processBatch, 0);
       } else {
-        // Generate single combined XML containing all rows
-        const singleXml = generateCombinedXml(rows, headerMappings, rootTag || 'records', recordTag || 'record');
+        // Generate TestLink compliant XML (<testcases>)
+        const singleXml = (rootTag === 'testcases' || !rootTag || rootTag === 'records')
+          ? generateTestLinkXml(rows)
+          : generateCombinedXml(rows, headerMappings, rootTag, recordTag);
         setCombinedXml(singleXml);
         setGeneratedRecords(recordSummaries);
         setIsConverting(false);

@@ -24,7 +24,7 @@ import {
   ACCEPT_FILE_TYPES, 
   getFileFormat 
 } from '../utils/fileParser';
-import { generateCombinedXml, downloadXmlFile } from '../utils/xmlGenerator';
+import { generateCombinedXml, generateTestLinkXml, downloadXmlFile } from '../utils/xmlGenerator';
 
 function formatBytes(bytes, decimals = 2) {
   if (!+bytes) return '0 Bytes';
@@ -182,11 +182,17 @@ export default function BulkCsvSection({ onBackToSingle }) {
         let xmlContent = '';
 
         if (parsedResult.isAlreadyXml) {
-          xmlContent = parsedResult.rawXml || (await currentFile.text());
+          const raw = parsedResult.rawXml || (await currentFile.text());
+          if (raw.includes('<testcases') || raw.includes('<testcase')) {
+            xmlContent = raw;
+          } else if (parsedResult.data && parsedResult.data.length > 0) {
+            xmlContent = generateTestLinkXml(parsedResult.data);
+          } else {
+            xmlContent = raw;
+          }
         } else {
           const rows = parsedResult.data || [];
-          const headerMappings = parsedResult.headerMappings || [];
-          xmlContent = generateCombinedXml(rows, headerMappings, 'records', 'record');
+          xmlContent = generateTestLinkXml(rows);
         }
 
         results.push({

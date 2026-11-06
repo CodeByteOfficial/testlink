@@ -284,10 +284,10 @@ export default function UploadSection({
                     type="text"
                     value={rootTag}
                     onChange={(e) => setRootTag(e.target.value.replace(/[^\w-]/g, ''))}
-                    placeholder="records"
+                    placeholder="testcases"
                     className="w-full px-3 py-1.5 text-xs font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">e.g. &lt;records&gt;</span>
+                  <span className="text-[11px] text-slate-400 mt-0.5 block">e.g. &lt;testcases&gt;</span>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">
@@ -297,10 +297,10 @@ export default function UploadSection({
                     type="text"
                     value={recordTag}
                     onChange={(e) => setRecordTag(e.target.value.replace(/[^\w-]/g, ''))}
-                    placeholder="record"
+                    placeholder="testcase"
                     className="w-full px-3 py-1.5 text-xs font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">e.g. &lt;record&gt;</span>
+                  <span className="text-[11px] text-slate-400 mt-0.5 block">e.g. &lt;testcase&gt;</span>
                 </div>
               </div>
             </div>
@@ -311,7 +311,7 @@ export default function UploadSection({
             <div className="text-xs text-slate-500">
               {totalRecords > 0 ? (
                 <span>
-                  Ready to combine <strong>{totalRecords.toLocaleString()} records</strong> into a single <strong>.xml</strong> file under &lt;{rootTag || 'records'}&gt;.
+                  Ready to combine <strong>{totalRecords.toLocaleString()} records</strong> into a single <strong>.xml</strong> file under &lt;{rootTag || 'testcases'}&gt;.
                 </span>
               ) : (
                 <span>Validating file structure...</span>
