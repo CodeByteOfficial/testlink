@@ -30,14 +30,17 @@ export default function RunBabyRunModal({
   };
 
   const handleModalClose = () => {
-    if (isRunning && onStop) {
+    if (onStop) {
       onStop();
     }
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={handleModalClose}
+    >
       <div 
         className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh] text-slate-200"
         onClick={e => e.stopPropagation()}

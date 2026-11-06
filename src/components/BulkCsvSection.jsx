@@ -137,9 +137,9 @@ export default function BulkCsvSection({ onBackToSingle }) {
   };
 
   const handleCloseAutomationModal = async () => {
-    if (isAutomationRunning) {
+    try {
       await handleStopAutomation();
-    }
+    } catch (_) {}
     setIsAutomationModalOpen(false);
   };
 

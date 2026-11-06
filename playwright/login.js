@@ -284,6 +284,17 @@ function getTestCaseCountFromFile(filePath) {
     args: ['--start-maximized'],
   });
 
+  // Gracefully close browser if user terminates process
+  const cleanup = async () => {
+    try {
+      await browser.close().catch(() => {});
+    } catch (_) {}
+    process.exit(0);
+  };
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('SIGHUP', cleanup);
+
   // Basic auth header for direct injection
   const basicAuthHeader = 'Basic ' + Buffer.from(`${HTTP_AUTH_USERNAME}:${HTTP_AUTH_PASSWORD}`).toString('base64');
 
@@ -541,23 +552,38 @@ function getTestCaseCountFromFile(filePath) {
       // ------------------------------------------------------------------------
       // STEP 3.8: Click "Import Test Cases" (under Test Case Operations fieldset)
       // ------------------------------------------------------------------------
-      console.log(`\n[Suite ID ${suiteId} - Step 3.8] Clicking "Import Test Cases" icon ...`);
+      console.log(`\n[Suite ID ${suiteId} - Step 3.8] Clicking "Import Test Cases" icon (under Test Case Operations) ...`);
 
       let tcImportClicked = false;
       const workframe = page.frame({ name: 'workframe' });
 
-      // Fast check: Click import icon directly in workframe
       for (const frame of [workframe, ...page.frames()].filter(Boolean)) {
         try {
-          const importBtn = frame.locator('img[onclick*="tcImport"], img[src*="door_in.png"], a:has-text("Import"), img[title*="Import"]').first();
-          if (await importBtn.count().catch(() => 0) > 0) {
-            await importBtn.scrollIntoViewIfNeeded().catch(() => { });
-            await importBtn.click({ force: true }).catch(() => { });
-            await importBtn.evaluate(el => {
+          const tcOperationsFieldset = frame.locator('fieldset').filter({ hasText: 'Test Case Operations' });
+          if (await tcOperationsFieldset.count().catch(() => 0) > 0) {
+            const tcImportImg = tcOperationsFieldset.locator('img[onclick*="tcImport"], img[src*="door_in.png"], img[title="Import"]').first();
+            if (await tcImportImg.count().catch(() => 0) > 0) {
+              await tcImportImg.scrollIntoViewIfNeeded().catch(() => { });
+              await tcImportImg.click({ force: true });
+              await tcImportImg.evaluate(el => {
+                if (el.onclick) el.onclick();
+                else if (el.getAttribute('onclick')) eval(el.getAttribute('onclick'));
+              }).catch(() => { });
+              console.log('   ✅ Successfully clicked "Import Test Cases" under Test Case Operations');
+              tcImportClicked = true;
+              break;
+            }
+          }
+
+          const directTcImport = frame.locator('img[onclick*="tcImport.php"], img[src*="door_in.png"][onclick*="tcImport"]').first();
+          if (await directTcImport.count().catch(() => 0) > 0) {
+            await directTcImport.scrollIntoViewIfNeeded().catch(() => { });
+            await directTcImport.click({ force: true });
+            await directTcImport.evaluate(el => {
               if (el.onclick) el.onclick();
               else if (el.getAttribute('onclick')) eval(el.getAttribute('onclick'));
             }).catch(() => { });
-            console.log('   ✅ Successfully clicked "Import Test Cases" icon');
+            console.log('   ✅ Successfully clicked direct "tcImport.php" icon');
             tcImportClicked = true;
             break;
           }
@@ -566,16 +592,10 @@ function getTestCaseCountFromFile(filePath) {
 
       if (!tcImportClicked) {
         console.warn('   ⚠️ Falling back to general tcImport selector...');
-        await clickInFrames(page, 'img[onclick*="tcImport"], img[src*="door_in.png"]', 'Import Test Cases', 4000);
+        await clickInFrames(page, 'fieldset:has-text("Test Case Operations") img[src*="door_in.png"], img[onclick*="tcImport.php"]', 'Import Test Cases');
       }
 
-      // Fast wait for import page to settle (approx 3s + 2s buffer max)
-      const wf = page.frame({ name: 'workframe' });
-      if (wf) {
-        await wf.waitForSelector('input[name="uploadedFile"], input[type="file"], input[name="UploadFile"]', { timeout: 4000 }).catch(() => { });
-      }
-      console.log(`⏱️  [Step 3.8 Complete] Waiting 3 seconds (+ buffer) for Import Page ready...`);
-      await page.waitForTimeout(3000);
+      await waitStep(page, `Suite ID ${suiteId} - Step 3.8: Import Test Cases Page Opened`);
 
       // ------------------------------------------------------------------------
       // STEP 3.9: Upload XML File into Test Case Import (from test.json filePath)
@@ -589,22 +609,10 @@ function getTestCaseCountFromFile(filePath) {
       }
 
       let fileInput = null;
-      // Fast check directly in workframe first
-      const wfForUpload = page.frame({ name: 'workframe' });
-      if (wfForUpload) {
-        const directInput = wfForUpload.locator('input[name="uploadedFile"], input[type="file"]').first();
-        if (await directInput.count().catch(() => 0) > 0) {
-          fileInput = directInput;
-        }
-      }
-
-      // If not in workframe, check all frames with fast 3s + 2s buffer (max 5s)
-      if (!fileInput) {
-        const fileInputStart = Date.now();
-        while (Date.now() - fileInputStart < 5000 && !fileInput) {
-          fileInput = await findInFrames(page, 'input[name="uploadedFile"], input[type="file"]', 1000);
-          if (!fileInput) await page.waitForTimeout(200);
-        }
+      const fileInputStart = Date.now();
+      while (Date.now() - fileInputStart < 15000 && !fileInput) {
+        fileInput = await findInFrames(page, 'input[name="uploadedFile"], input[type="file"]', 2000);
+        if (!fileInput) await page.waitForTimeout(500);
       }
 
       if (fileInput) {
@@ -615,31 +623,14 @@ function getTestCaseCountFromFile(filePath) {
         console.error(`   ❌ File input element (<input type="file" name="uploadedFile">) not found on tcImport page!`);
         throw new Error('File input field not found on Test Case Import page.');
       }
-
-      console.log(`⏱️  [Step 3.9 Complete] File attached, waiting 3 seconds before upload submission...`);
-      await page.waitForTimeout(3000);
+      await waitStep(page, `Suite ID ${suiteId} - Step 3.9: File Upload Field Ready`);
 
       // ------------------------------------------------------------------------
       // STEP 3.10: Click "Upload file" Button
       // ------------------------------------------------------------------------
       console.log(`\n[Suite ID ${suiteId} - Step 3.10] Clicking "Upload file" button ...`);
-      let uploadClicked = false;
-      const wfUpload = page.frame({ name: 'workframe' });
-      if (wfUpload) {
-        const uploadBtn = wfUpload.locator('input[name="UploadFile"], input[value="Upload file"]').first();
-        if (await uploadBtn.count().catch(() => 0) > 0) {
-          await uploadBtn.click({ force: true }).catch(() => { });
-          uploadClicked = true;
-          console.log('   ✅ Clicked "Upload file" button directly in workframe');
-        }
-      }
-
-      if (!uploadClicked) {
-        await clickInFrames(page, 'input[name="UploadFile"], input[value="Upload file"]', 'Upload file button', 4000);
-      }
-
-      console.log(`⏱️  [Step 3.10 Complete] Waiting 3 seconds (+ 2s buffer) for XML to process...`);
-      await page.waitForTimeout(3000);
+      await clickInFrames(page, 'input[name="UploadFile"], input[value="Upload file"]', 'Upload file button');
+      await waitStep(page, `Suite ID ${suiteId} - Step 3.10: File Uploaded`);
 
       // ------------------------------------------------------------------------
       // STEP 3.11: Click Desktop Icon
