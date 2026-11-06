@@ -64,12 +64,12 @@ export default function ResultsSection({
   };
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8 space-y-6">
+    <section className="bg-slate-900/90 rounded-2xl border border-blue-500/20 shadow-2xl p-6 lg:p-8 space-y-6 backdrop-blur-md">
       
       {/* Primary Hero Header: Single XML File with All Records */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-blue-500/20">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute left-1/3 bottom-0 -mb-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 bottom-0 -mb-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-3">
@@ -80,23 +80,23 @@ export default function ResultsSection({
             
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight flex items-center gap-3">
-                <FileCode className="w-7 h-7 text-blue-400 shrink-0" />
+                <FileCode className="w-7 h-7 text-cyan-400 shrink-0" />
                 <span className="break-all">{xmlFileName}</span>
               </h2>
-              <p className="text-slate-300 text-sm mt-1">
+              <p className="text-slate-400 text-sm mt-1">
                 Single file output: All {totalRecords.toLocaleString()} records are structured together inside this one XML document.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-1 font-mono">
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg">
-                Total Records: <strong className="text-white">{totalRecords.toLocaleString()}</strong>
+              <span className="bg-slate-900/80 border border-slate-700/80 px-2.5 py-1 rounded-lg">
+                Total Records: <strong className="text-cyan-300">{totalRecords.toLocaleString()}</strong>
               </span>
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg">
-                Total XML Lines: <strong className="text-white">{lineCount.toLocaleString()}</strong>
+              <span className="bg-slate-900/80 border border-slate-700/80 px-2.5 py-1 rounded-lg">
+                Total XML Lines: <strong className="text-cyan-300">{lineCount.toLocaleString()}</strong>
               </span>
-              <span className="bg-white/10 px-2.5 py-1 rounded-lg">
-                File Size: <strong className="text-white">{formatBytes(xmlBlobSize)}</strong>
+              <span className="bg-slate-900/80 border border-slate-700/80 px-2.5 py-1 rounded-lg">
+                File Size: <strong className="text-cyan-300">{formatBytes(xmlBlobSize)}</strong>
               </span>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function ResultsSection({
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 px-4 py-3 text-xs font-semibold text-slate-200 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-3 text-xs font-semibold text-slate-200 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded-xl transition-all shadow-sm cursor-pointer"
               title="Copy entire XML content to clipboard"
             >
               {copiedFull ? (
@@ -116,7 +116,7 @@ export default function ResultsSection({
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4" />
+                  <Copy className="w-4 h-4 text-slate-300" />
                   <span>Copy XML</span>
                 </>
               )}
@@ -125,17 +125,17 @@ export default function ResultsSection({
             <button
               type="button"
               onClick={handleDownload}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-500 active:scale-[0.98] shadow-lg shadow-blue-500/30 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 active:scale-[0.98] shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
               title="Download the single XML file with all records"
             >
               {downloadedFull ? (
                 <>
-                  <Check className="w-5 h-5 text-emerald-300" />
+                  <Check className="w-5 h-5 text-slate-950 stroke-[3]" />
                   <span>Downloaded!</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-5 h-5" />
+                  <Download className="w-5 h-5 stroke-[2.5]" />
                   <span>Download XML File</span>
                 </>
               )}
@@ -145,7 +145,7 @@ export default function ResultsSection({
             <button
               type="button"
               onClick={onOpenTestLink}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 active:scale-[0.98] shadow-lg shadow-indigo-500/30 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 active:scale-[0.98] shadow-lg shadow-indigo-500/30 transition-all cursor-pointer"
               title="Open TestLink and transfer records"
             >
               <ExternalLink className="w-5 h-5" />
@@ -156,28 +156,28 @@ export default function ResultsSection({
       </div>
 
       {/* Tabs & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('xml')}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === 'xml'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'bg-blue-950/80 text-cyan-300 border border-blue-500/40 shadow-xs'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Code2 className="w-4 h-4" />
+            <Code2 className="w-4 h-4 text-cyan-400" />
             Complete XML Preview ({lineCount.toLocaleString()} lines)
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('table')}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === 'table'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'bg-blue-950/80 text-cyan-300 border border-blue-500/40 shadow-xs'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
             <TableIcon className="w-4 h-4" />

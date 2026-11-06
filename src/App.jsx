@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
+import HeroSection from './components/HeroSection';
 import UploadSection from './components/UploadSection';
 import BulkCsvSection from './components/BulkCsvSection';
 import CsvPreviewSection from './components/CsvPreviewSection';
@@ -11,7 +12,7 @@ import { generateCombinedXml, generateTestLinkXml } from './utils/xmlGenerator';
 import { ShieldCheck, HelpCircle } from 'lucide-react';
 
 export default function App() {
-  const [activeMode, setActiveMode] = useState('single'); // 'single' | 'bulk'
+  const [activeMode, setActiveMode] = useState('bulk'); // Default to bulk automation suite
   const [file, setFile] = useState(null);
   const [fileFormat, setFileFormat] = useState('csv');
   const [sheetNames, setSheetNames] = useState([]);
@@ -169,8 +170,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
-      {/* Header with Mode Switcher */}
+    <div className="min-h-screen flex flex-col bg-[#030712] text-slate-100 selection:bg-blue-600/30 selection:text-cyan-200">
+      {/* Header with Dark Glass Navbar */}
       <Header
         onLoadSample={handleLoadSample}
         hasUploadedFile={!!file}
@@ -178,11 +179,23 @@ export default function App() {
         setActiveMode={setActiveMode}
       />
 
+      {/* 🌟 Futuristic Hero Section & 3 Feature Cards (Matching Screenshot) */}
+      <HeroSection 
+        activeMode={activeMode}
+        setActiveMode={setActiveMode}
+        onScrollToWorkspace={() => {
+          document.getElementById('workspace')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
+
       {/* Main Workspace Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main id="workspace" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 relative">
         
+        {/* Ambient Radial Spotlight */}
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-3/4 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+
         {activeMode === 'bulk' ? (
-          /* Bulk CSV Converter View */
+          /* Bulk CSV Converter & Runner View */
           <BulkCsvSection onBackToSingle={() => setActiveMode('single')} />
         ) : (
           /* Single File Converter View */
@@ -247,28 +260,28 @@ export default function App() {
 
             {/* Feature Explanatory Card if no file uploaded */}
             {!file && (
-              <div className="border border-slate-200/80 bg-white/60 rounded-2xl p-6 sm:p-8 backdrop-blur-xs">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-blue-600" />
-                  All Records in One File &amp; TestLink Transfer
+              <div className="border border-blue-500/20 bg-slate-900/80 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-400 mb-4 flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-cyan-400" />
+                  All Records in One File &amp; TestLink Autonomous Transfer
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
-                  <div className="space-y-1.5">
-                    <div className="font-semibold text-slate-800 text-sm">1. Multi-Format to One XML</div>
-                    <p>
-                      Upload <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700">.csv</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">.xlsx / .xls</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-amber-700">.tsv</code>, or <code className="bg-slate-100 px-1 py-0.5 rounded text-purple-700">.json</code> to bundle all records into a single <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700">.xml</code> file.
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
+                  <div className="space-y-1.5 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                    <div className="font-bold text-white text-sm">1. Multi-Format to One XML</div>
+                    <p className="text-slate-400 leading-relaxed">
+                      Upload <code className="bg-slate-900 px-1 py-0.5 rounded text-cyan-300 border border-blue-500/30">.csv</code>, <code className="bg-slate-900 px-1 py-0.5 rounded text-emerald-300 border border-emerald-500/30">.xlsx / .xls</code>, <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300 border border-amber-500/30">.tsv</code>, or <code className="bg-slate-900 px-1 py-0.5 rounded text-purple-300 border border-purple-500/30">.json</code> to bundle all records into a single <code className="bg-slate-900 px-1 py-0.5 rounded text-cyan-300 border border-blue-500/30">.xml</code> file.
                     </p>
                   </div>
-                  <div className="space-y-1.5">
-                    <div className="font-semibold text-slate-800 text-sm">2. Bulk CSV Batch Conversion</div>
-                    <p>
-                      Use the <strong>Bulk CSV</strong> mode to drop multiple CSV files at once, convert each file to XML, and export a JSON manifest of file paths for automation.
+                  <div className="space-y-1.5 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                    <div className="font-bold text-white text-sm">2. Bulk Batch Conversion</div>
+                    <p className="text-slate-400 leading-relaxed">
+                      Use the <strong>Bulk Upload</strong> mode to drop multiple files at once, convert each file to XML individually with "I am the artist bro!", and export a JSON manifest of file paths.
                     </p>
                   </div>
-                  <div className="space-y-1.5">
-                    <div className="font-semibold text-slate-800 text-sm">3. Transfer to TestLink</div>
-                    <p>
-                      Use the <strong>Transfer to TestLink</strong> button to automatically launch <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">testing.creditq.co.in</code>, navigate to Test Specification, and access the Settings Actions cog after a 3-second delay.
+                  <div className="space-y-1.5 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                    <div className="font-bold text-white text-sm">3. Playwright Runner</div>
+                    <p className="text-slate-400 leading-relaxed">
+                      Launch the <strong>"Run baby run"</strong> autonomous automation engine to execute all test suites dynamically across TestLink with full frame traversal and live terminal logs.
                     </p>
                   </div>
                 </div>
@@ -288,16 +301,17 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700">Universal File to XML Converter</span>
-            <span>&bull; Direct TestLink Integration</span>
+      <footer className="mt-auto border-t border-slate-800/80 bg-slate-950/90 py-8 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-white">welcome to the automation world</span>
+            <span className="text-slate-600">&bull;</span>
+            <span className="text-slate-400">Direct TestLink &amp; Playwright Suite</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-emerald-700 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              Private: Client-side processing only (no server upload)
+            <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              100% In-Browser Privacy: Client-side processing only (no server upload)
             </span>
           </div>
         </div>

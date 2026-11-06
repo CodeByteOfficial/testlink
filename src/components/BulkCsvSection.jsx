@@ -475,27 +475,27 @@ export default function BulkCsvSection({ onBackToSingle }) {
     <div className="space-y-8">
       
       {/* Top Banner & Mode Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-indigo-50 border border-indigo-200/80 rounded-2xl p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 border border-blue-500/25 rounded-2xl p-6 shadow-xl backdrop-blur-md">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
             <Files className="w-5 h-5" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base sm:text-lg font-bold text-white">
                 Bulk Multi-Format to XML Converter
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-600 text-white">Bulk Mode</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-cyan-300 border border-blue-500/30 font-mono">Bulk Mode</span>
               <div className="flex items-center gap-1">
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-100 text-blue-700 font-mono">CSV</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 font-mono">XLSX</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-green-100 text-green-700 font-mono">XLS</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-700 font-mono">TSV</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-100 text-purple-700 font-mono">JSON</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800 font-mono">CSV</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">XLSX</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono">XLS</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 font-mono">TSV</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800 font-mono">JSON</span>
               </div>
             </div>
-            <p className="text-xs text-slate-600 mt-0.5">
-              Upload multiple files across any supported format, batch-convert to TestLink XML, and export a JSON path mapping manifest.
+            <p className="text-xs text-slate-400 mt-1">
+              Upload multiple files across any supported format, batch-convert to TestLink XML, and export a dynamic JSON path mapping manifest.
             </p>
           </div>
         </div>
@@ -504,21 +504,21 @@ export default function BulkCsvSection({ onBackToSingle }) {
           <button
             type="button"
             onClick={onBackToSingle}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded-xl transition-all self-start sm:self-auto cursor-pointer"
           >
-            Switch to Single File Mode
+            Switch to Single Mode
           </button>
         )}
       </div>
 
       {/* Target Directory Path Input */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2">
+      <div className="bg-slate-900/90 rounded-2xl border border-blue-500/20 p-5 shadow-xl backdrop-blur-md space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <FolderOpen className="w-4 h-4 text-indigo-600" />
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <FolderOpen className="w-4 h-4 text-cyan-400" />
             Target Download / Storage Directory Path (for JSON Manifest)
           </label>
-          <span className="text-[11px] text-slate-500">Used by Playwright automation script</span>
+          <span className="text-[11px] font-mono text-cyan-400/80">Used by Playwright automation script</span>
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -526,11 +526,11 @@ export default function BulkCsvSection({ onBackToSingle }) {
             value={downloadPath}
             onChange={(e) => handlePathChange(e.target.value)}
             placeholder={String.raw`C:\Users\komal\Downloads`}
-            className="flex-1 px-3.5 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-800"
+            className="flex-1 px-4 py-2.5 text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500 transition-all text-cyan-300 placeholder:text-slate-600"
           />
         </div>
-        <p className="text-[11px] text-slate-500">
-          This path is stored in the exported JSON file so the Playwright automation script can locate each XML file on your disk.
+        <p className="text-[11px] text-slate-400">
+          This path is stored in <code className="text-cyan-300 font-mono">playwright/tests/test.json</code> so the automation script can locate each XML file on your disk.
         </p>
       </div>
 
@@ -540,10 +540,10 @@ export default function BulkCsvSection({ onBackToSingle }) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 ${
+        className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-300 ${
           isDragOver
-            ? 'border-indigo-500 bg-indigo-50/60 scale-[0.99]'
-            : 'border-slate-300 hover:border-indigo-400 bg-white/80 hover:bg-slate-50/50'
+            ? 'border-cyan-400 bg-cyan-950/30 scale-[0.99] shadow-[0_0_30px_rgba(6,182,212,0.2)]'
+            : 'border-slate-800 hover:border-cyan-500/60 bg-slate-900/40 hover:bg-slate-900/70 shadow-lg'
         }`}
       >
         <input
@@ -556,19 +556,19 @@ export default function BulkCsvSection({ onBackToSingle }) {
         />
 
         <div className="max-w-md mx-auto space-y-3">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
-            <UploadCloud className="w-7 h-7" />
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-950/60 border border-blue-500/30 text-cyan-400 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+            <UploadCloud className="w-8 h-8" />
           </div>
 
           <div>
-            <span className="font-semibold text-slate-900 text-sm">
+            <span className="font-bold text-white text-sm">
               Click to browse
             </span>
-            <span className="text-slate-600 text-sm"> or drag and drop multiple files here</span>
+            <span className="text-slate-400 text-sm"> or drag and drop multiple test sheets here</span>
           </div>
 
           <p className="text-xs text-slate-500">
-            Supports <strong className="text-slate-700">.csv</strong>, <strong className="text-slate-700">.xlsx</strong>, <strong className="text-slate-700">.xls</strong>, <strong className="text-slate-700">.tsv</strong>, <strong className="text-slate-700">.json</strong>, and <strong className="text-slate-700">.txt</strong>
+            Supports <strong className="text-slate-300">.csv</strong>, <strong className="text-slate-300">.xlsx</strong>, <strong className="text-slate-300">.xls</strong>, <strong className="text-slate-300">.tsv</strong>, <strong className="text-slate-300">.json</strong>, and <strong className="text-slate-300">.txt</strong>
           </p>
         </div>
       </div>
@@ -582,21 +582,21 @@ export default function BulkCsvSection({ onBackToSingle }) {
 
       {/* Uploaded Files List */}
       {files.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70">
+        <div className="bg-slate-900/90 rounded-2xl border border-blue-500/20 shadow-xl overflow-hidden backdrop-blur-md">
+          <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/70">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Files className="w-4 h-4 text-indigo-600" />
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Files className="w-4 h-4 text-cyan-400" />
                 Uploaded Files ({files.length})
               </h3>
-              <p className="text-xs text-slate-500">Ready for batch conversion to XML</p>
+              <p className="text-xs text-slate-400">Ready for batch conversion to XML</p>
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <button
                 type="button"
                 onClick={clearAllFiles}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 hover:border-rose-200"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors border border-slate-800 hover:border-rose-800/50 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Clear All
@@ -606,7 +606,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                 type="button"
                 onClick={handleBulkConvert}
                 disabled={isConverting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-xl shadow-lg shadow-cyan-500/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 {isConverting ? (
                   <>
@@ -615,7 +615,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                   </>
                 ) : (
                   <>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
                     Convert All ({files.length}) to XML
                   </>
                 )}
@@ -624,31 +624,31 @@ export default function BulkCsvSection({ onBackToSingle }) {
           </div>
 
           {isConverting && currentProcessingFile && (
-            <div className="px-5 py-2.5 bg-indigo-50/80 border-b border-indigo-100 flex items-center gap-2 text-xs text-indigo-900 font-medium">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+            <div className="px-5 py-2.5 bg-blue-950/60 border-b border-blue-900/50 flex items-center gap-2 text-xs text-cyan-300 font-medium">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />
               <span>Processing: <strong className="font-mono">{currentProcessingFile}</strong></span>
             </div>
           )}
 
-          <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+          <div className="divide-y divide-slate-800 max-h-72 overflow-y-auto">
             {files.map((f, idx) => {
               const base = f.name.replace(/\.[^/.]+$/, '');
               const fmt = getFileFormat(f.name);
               return (
-                <div key={idx} className="p-3.5 sm:px-5 flex items-center justify-between text-xs hover:bg-slate-50/70 transition-colors">
+                <div key={idx} className="p-3.5 sm:px-5 flex items-center justify-between text-xs hover:bg-slate-850/50 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] shrink-0 font-mono">
+                    <div className="w-7 h-7 rounded-lg bg-blue-950 border border-blue-800/50 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-mono">
                       {idx + 1}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-800 truncate">{f.name}</span>
+                        <span className="font-semibold text-slate-200 truncate">{f.name}</span>
                         {getFormatBadge(fmt)}
                       </div>
-                      <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                      <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                         <span>{formatBytes(f.size)}</span>
                         <span>&bull;</span>
-                        <span className="font-mono text-indigo-700">Suite: {base}</span>
+                        <span className="font-mono text-cyan-400">Suite: {base}</span>
                       </div>
                     </div>
                   </div>
@@ -656,7 +656,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                   <button
                     type="button"
                     onClick={() => removeFile(idx)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-rose-50 transition-colors"
+                    className="p-1.5 text-slate-500 hover:text-rose-400 rounded-md hover:bg-rose-950/30 transition-colors cursor-pointer"
                     title="Remove file"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -670,10 +670,10 @@ export default function BulkCsvSection({ onBackToSingle }) {
 
       {/* Conversion Results & Download Section */}
       {isConverted && convertedFiles.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-6 sm:p-8 space-y-6">
+        <div className="bg-slate-900/90 rounded-2xl border border-blue-500/20 shadow-2xl p-6 sm:p-8 space-y-6 backdrop-blur-md">
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-6 sm:p-7 shadow-lg flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white rounded-xl p-6 sm:p-7 shadow-lg border border-blue-500/20 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -715,7 +715,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                 type="button"
                 onClick={() => saveManifestToTestJson(jsonManifest)}
                 disabled={isSyncing}
-                className="inline-flex items-center gap-2 px-4 py-3 text-xs font-bold text-white bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 rounded-xl transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-3.5 text-xs font-bold text-white bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 rounded-xl transition-all cursor-pointer"
                 title="Force overwrite C:\Users\komal\Projects\testlink\playwright\tests\test.json"
               >
                 {isSyncing ? (
@@ -730,46 +730,44 @@ export default function BulkCsvSection({ onBackToSingle }) {
                   </>
                 )}
               </button>
-
-
             </div>
           </div>
 
           {/* Sync Status Banner */}
-          <div className="flex items-center justify-between p-3.5 px-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
+          <div className="flex items-center justify-between p-3.5 px-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>
-                <strong>Dynamic JSON Storage Active:</strong> <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-800">playwright\tests\test.json</code> contains all converted file details (id, fileName, suiteName, format, filePath, totalRecords, status). No ZIP or JSON file is downloaded in the browser.
+                <strong>Dynamic JSON Storage Active:</strong> <code className="font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-emerald-500/40 text-emerald-300">playwright\tests\test.json</code> contains all converted file details (id, fileName, suiteName, format, filePath, totalRecords, status). No ZIP or JSON file is downloaded in the browser.
               </span>
             </div>
-            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] font-mono text-emerald-300 bg-emerald-900/40 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
               Overwrites on Every Download
             </span>
           </div>
 
           {/* Table of Converted Files */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-            <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <div className="border border-slate-800 rounded-xl overflow-hidden shadow-xl bg-slate-950/60">
+            <div className="px-5 py-3.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                 Converted XML Files ({convertedFiles.length})
               </h4>
               <span className="text-[11px] text-slate-500">Each file downloads as an individual .xml file (No ZIP)</span>
             </div>
 
-            <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+            <div className="divide-y divide-slate-800 max-h-72 overflow-y-auto">
               {convertedFiles.map((item) => (
-                <div key={item.id} className="p-3.5 px-5 flex items-center justify-between text-xs hover:bg-slate-50/60 transition-colors">
+                <div key={item.id} className="p-3.5 px-5 flex items-center justify-between text-xs hover:bg-slate-900/60 transition-colors">
                   <div className="space-y-0.5">
-                    <div className="font-semibold text-slate-900 flex items-center gap-2">
-                      <FileCode className="w-4 h-4 text-indigo-600" />
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <FileCode className="w-4 h-4 text-cyan-400" />
                       <span>{item.xmlFileName}</span>
                       {getFormatBadge(item.format)}
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-100 text-emerald-800">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800">
                         {item.totalRecords} records
                       </span>
                     </div>
-                    <div className="text-[11px] font-mono text-slate-500">
+                    <div className="text-[11px] font-mono text-slate-400">
                       Path: {item.filePath}
                     </div>
                   </div>
@@ -777,9 +775,9 @@ export default function BulkCsvSection({ onBackToSingle }) {
                   <button
                     type="button"
                     onClick={() => handleDownloadSingleXml(item)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-cyan-300 hover:text-white bg-cyan-950/50 hover:bg-cyan-900/50 rounded-lg border border-cyan-500/30 transition-colors cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5 text-cyan-400" />
                     Download XML
                   </button>
                 </div>
