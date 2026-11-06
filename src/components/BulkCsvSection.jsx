@@ -247,12 +247,20 @@ export default function BulkCsvSection({ onBackToSingle }) {
 
     setConvertedFiles(results);
 
-    // test.json only contains the downloaded file paths where the converted XML files are downloaded
-    const downloadedPathsOnly = results
-      .filter(r => r.status === 'success' && r.filePath)
-      .map(r => r.filePath);
+    // test.json stores all metadata fields (id, originalFileName, xmlFileName, suiteName, format, filePath, totalRecords, status, convertedAt)
+    const manifestData = results.map(({ id, originalFileName, xmlFileName, suiteName, format, filePath, totalRecords, status, convertedAt }) => ({
+      id,
+      originalFileName,
+      xmlFileName,
+      suiteName,
+      format,
+      filePath,
+      totalRecords,
+      status,
+      convertedAt
+    }));
 
-    const jsonString = JSON.stringify(downloadedPathsOnly, null, 2);
+    const jsonString = JSON.stringify(manifestData, null, 2);
     setJsonManifest(jsonString);
 
     // Automatically sync updated JSON directly to playwright/tests/test.json
@@ -598,7 +606,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
-                <strong>Dynamic Path Storage Active:</strong> <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-800">playwright\tests\test.json</code> strictly contains <strong>only the downloaded XML file paths</strong>. No ZIP or JSON file is downloaded in the browser.
+                <strong>Dynamic JSON Storage Active:</strong> <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-800">playwright\tests\test.json</code> contains all converted file details (id, fileName, suiteName, format, filePath, totalRecords, status). No ZIP or JSON file is downloaded in the browser.
               </span>
             </div>
             <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full">
