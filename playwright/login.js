@@ -47,7 +47,17 @@ if (process.env.BASIC_AUTH_USER && !process.env.BASIC_AUTH_USER.includes('your_'
 const TESTLINK_USER = 'harsh';
 const TESTLINK_PASS = '9ZvSgQc466';
 const TARGET_PROJECT_VALUE = '1';            // CQ:CreditQ
-const TARGET_PLAN_LABEL = '6.6 Release';     // 6.6 Release
+
+// ============================================================================
+// 🎯 [TEST PLAN CONFIGURATION] - TARGET_PLAN_LABEL
+// ============================================================================
+// 👉 JAB BHI TEST PLAN CHANGE KARNA HO:
+// Aap directly yahan 'TARGET_PLAN_LABEL' ki value update kar sakte hain:
+// Example 1: const TARGET_PLAN_LABEL = 'New Admin Portal';
+// Example 2: const TARGET_PLAN_LABEL = '6.6 Release';
+// (Script automatically Chosen dropdown me se is plan ko search & select kar legi)
+const TARGET_PLAN_LABEL = 'New Admin Portal';
+
 const TESTER_ID = '9';                       // harsh
 const BUILD_ID = '92';                       // 6.6 Round _1
 const DELAY_MS = 3000;                       // 3 seconds delay after each step
@@ -336,25 +346,35 @@ function getTestCaseCountFromFile(filePath) {
     await waitStep(page, 'Step 1: Project Selected');
 
     // ------------------------------------------------------------------------
-    // STEP 2: Select Test Plan "6.6 Release" (Chosen Dropdown) (RUNS ONCE)
+    // STEP 2: Select Test Plan (Chosen Dropdown) (RUNS ONCE)
     // ------------------------------------------------------------------------
     console.log(`\n[Step 2] Selecting Test Plan "${TARGET_PLAN_LABEL}" ...`);
     let planSelected = false;
+
+    // 1. Try selecting via standard HTML select option label
     const directPlanSelect = await findInFrames(page, 'select[name="testplan"]');
     if (directPlanSelect) {
       try {
-        await directPlanSelect.selectOption({ label: TARGET_PLAN_LABEL }).catch(async () => {
-          await directPlanSelect.selectOption('28');
-        });
+        await directPlanSelect.selectOption({ label: TARGET_PLAN_LABEL });
         planSelected = true;
+        console.log(`   ✅ Selected Test Plan directly via select: "${TARGET_PLAN_LABEL}"`);
       } catch (_) { }
     }
 
+    // 2. Try selecting via Chosen dropdown UI
     if (!planSelected) {
       const chosenContainer = await findInFrames(page, '.chosen-container, a.chosen-single');
       if (chosenContainer) {
         await chosenContainer.click();
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(600);
+
+        // Search in Chosen dropdown input if available
+        const searchInput = await findInFrames(page, '.chosen-search input, input.chosen-search-input');
+        if (searchInput) {
+          await searchInput.fill(TARGET_PLAN_LABEL);
+          await page.waitForTimeout(400);
+        }
+
         const chosenOption = await findInFrames(page, `li.active-result:has-text("${TARGET_PLAN_LABEL}"), li[title*="${TARGET_PLAN_LABEL}"]`);
         if (chosenOption) {
           await chosenOption.click();
@@ -363,7 +383,7 @@ function getTestCaseCountFromFile(filePath) {
         }
       }
     }
-    await waitStep(page, 'Step 2: Test Plan Selected');
+    await waitStep(page, `Step 2: Test Plan Selected ("${TARGET_PLAN_LABEL}")`);
 
     // ========================================================================
     // 🔁 MULTI-SUITE EXECUTION LOOP (FROM test.json)

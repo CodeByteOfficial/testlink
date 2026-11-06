@@ -16,7 +16,10 @@ import {
   ArrowRight,
   FileSpreadsheet,
   FileText,
-  Play
+  Play,
+  Lock,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import JSZip from 'jszip';
 import RunBabyRunModal from './RunBabyRunModal';
@@ -67,6 +70,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
   const [copiedJson, setCopiedJson] = useState(false);
   const [downloadedAll, setDownloadedAll] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [hasDownloaded, setHasDownloaded] = useState(false);
   const [syncedPath, setSyncedPath] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState(null);
@@ -232,6 +236,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
     setIsConverting(true);
     setProgress(0);
     setError(null);
+    setHasDownloaded(false);
 
     const results = [];
     const normalizedBasePath = downloadPath.trim().replace(/[\\/]+$/, '');
@@ -439,6 +444,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
       }
 
       setDownloadedAll(true);
+      setHasDownloaded(true);
       setTimeout(() => setDownloadedAll(false), 3000);
     } catch (err) {
       console.error('Failed to download individual XML files', err);
@@ -452,6 +458,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
   const handleDownloadSingleXml = (file) => {
     if (!file.xmlContent) return;
     downloadXmlFile(file.xmlContent, file.xmlFileName);
+    setHasDownloaded(true);
   };
 
   // Copy JSON manifest to clipboard
@@ -493,36 +500,15 @@ export default function BulkCsvSection({ onBackToSingle }) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+        {onBackToSingle && (
           <button
             type="button"
-            onClick={handleRunBabyRun}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-rose-500 via-pink-600 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
-            title="Execute npm run login automation script"
+            onClick={onBackToSingle}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs transition-colors self-start sm:self-auto"
           >
-            {isAutomationRunning ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
-                <span>Running Baby Running...</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 fill-white" />
-                <span>Run baby run</span>
-              </>
-            )}
+            Switch to Single File Mode
           </button>
-
-          {onBackToSingle && (
-            <button
-              type="button"
-              onClick={onBackToSingle}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs transition-colors"
-            >
-              Switch to Single File Mode
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Target Directory Path Input */}
@@ -744,24 +730,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={handleRunBabyRun}
-                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-rose-500 via-pink-600 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 rounded-xl shadow-lg hover:shadow-rose-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                title="Execute Playwright automation: npm run login"
-              >
-                {isAutomationRunning ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                    <span>Running Baby Running...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 fill-white text-white" />
-                    <span>Run baby run</span>
-                  </>
-                )}
-              </button>
+
             </div>
           </div>
 
@@ -853,6 +822,88 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <pre className="max-h-64 overflow-y-auto text-[11px] text-slate-300 leading-relaxed scrollbar-thin">
               {jsonManifest}
             </pre>
+          </div>
+
+          {/* ============================================================ */}
+          {/* 🚀 HIGHLIGHTED EXECUTION SECTION - "Run baby run" (AT THE VERY LAST) */}
+          {/* ============================================================ */}
+          <div className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300 p-6 sm:p-7 ${
+            hasDownloaded
+              ? 'bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border-pink-500/50 shadow-2xl ring-2 ring-pink-500/30'
+              : 'bg-slate-900/90 border-slate-800 shadow-lg'
+          }`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    hasDownloaded
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  }`}>
+                    {hasDownloaded ? (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                        Unlocked &bull; Ready to Execute
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        Locked &bull; Click "Download" to Enable
+                      </>
+                    )}
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">playwright/login.js</span>
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                  <span>Playwright TestLink Automation Runner</span>
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  {hasDownloaded ? (
+                    <span className="text-emerald-300 font-medium">
+                      XML files download ho chuki hain! Ab aap <strong className="text-white">"Run baby run"</strong> button par click karke automation run kar sakte hain. Script <code className="text-pink-300 bg-slate-800 px-1.5 py-0.5 rounded font-mono">test.json</code> ke saare test suites execute karegi.
+                    </span>
+                  ) : (
+                    <span className="text-amber-200/90 font-medium">
+                      Ye button tab tak clickable nahi hoga jab tak aap upar diye gaye <strong className="text-white">"Download All XML Files"</strong> button par click na karein. Files download hone ke turant baad ye button active ho jayega.
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={hasDownloaded ? handleRunBabyRun : undefined}
+                  disabled={!hasDownloaded || isAutomationRunning}
+                  className={`inline-flex items-center justify-center gap-2.5 px-8 py-4 text-sm font-black uppercase tracking-wider rounded-xl transition-all shadow-xl ${
+                    !hasDownloaded
+                      ? 'bg-slate-800/80 text-slate-500 cursor-not-allowed border border-slate-700/80 opacity-60'
+                      : isAutomationRunning
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white cursor-wait animate-pulse'
+                        : 'bg-gradient-to-r from-rose-500 via-pink-600 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 text-white hover:scale-105 active:scale-95 cursor-pointer shadow-rose-500/30 ring-4 ring-pink-500/25'
+                  }`}
+                  title={
+                    !hasDownloaded
+                      ? 'Pehle "Download All XML Files" button par click karein'
+                      : 'Launch automation script: npm run login'
+                  }
+                >
+                  {isAutomationRunning ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 animate-spin text-white" />
+                      <span>Running Baby Running...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5 fill-white text-white" />
+                      <span>Run baby run</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
