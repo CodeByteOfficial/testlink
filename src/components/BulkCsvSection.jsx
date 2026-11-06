@@ -53,7 +53,7 @@ function getFormatBadge(fmt) {
 export default function BulkCsvSection({ onBackToSingle }) {
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [downloadPath, setDownloadPath] = useState(String.raw`C:\Users\komal\Downloads\convertor`);
+  const [downloadPath, setDownloadPath] = useState(String.raw`C:\Users\komal\Downloads`);
   
   // Conversion state
   const [isConverting, setIsConverting] = useState(false);
@@ -293,6 +293,33 @@ export default function BulkCsvSection({ onBackToSingle }) {
     return false;
   };
 
+  // Handle dynamic download path changes and sync test.json
+  const handlePathChange = (newPath) => {
+    setDownloadPath(newPath);
+    if (convertedFiles.length > 0) {
+      const normalized = (newPath || String.raw`C:\Users\komal\Downloads`).trim().replace(/[\\/]+$/, '');
+      const updatedFiles = convertedFiles.map(f => ({
+        ...f,
+        filePath: `${normalized}\\${f.xmlFileName}`
+      }));
+      setConvertedFiles(updatedFiles);
+      const manifestData = updatedFiles.map(({ id, originalFileName, xmlFileName, suiteName, format, filePath, totalRecords, status, convertedAt }) => ({
+        id,
+        originalFileName,
+        xmlFileName,
+        suiteName,
+        format,
+        filePath,
+        totalRecords,
+        status,
+        convertedAt
+      }));
+      const jsonString = JSON.stringify(manifestData, null, 2);
+      setJsonManifest(jsonString);
+      saveManifestToTestJson(jsonString);
+    }
+  };
+
   // Download all converted XML files individually (WITHOUT ZIP)
   const handleDownloadAllIndividualXmls = async () => {
     if (convertedFiles.length === 0) return;
@@ -301,11 +328,33 @@ export default function BulkCsvSection({ onBackToSingle }) {
     setDownloadedAll(false);
 
     try {
-      // 1. Overwrite playwright/tests/test.json dynamically with latest downloaded paths
-      await saveManifestToTestJson(jsonManifest);
+      // 1. Recalculate manifest with current normalized downloadPath to ensure accurate paths
+      const normalizedBasePath = (downloadPath || String.raw`C:\Users\komal\Downloads`).trim().replace(/[\\/]+$/, '');
+      const updatedFiles = convertedFiles.map(f => ({
+        ...f,
+        filePath: `${normalizedBasePath}\\${f.xmlFileName}`
+      }));
+      setConvertedFiles(updatedFiles);
 
-      // 2. Download each XML file individually with a 250ms stagger (No ZIP!)
-      const successfulFiles = convertedFiles.filter(f => f.xmlContent);
+      const manifestData = updatedFiles.map(({ id, originalFileName, xmlFileName, suiteName, format, filePath, totalRecords, status, convertedAt }) => ({
+        id,
+        originalFileName,
+        xmlFileName,
+        suiteName,
+        format,
+        filePath,
+        totalRecords,
+        status,
+        convertedAt
+      }));
+      const jsonString = JSON.stringify(manifestData, null, 2);
+      setJsonManifest(jsonString);
+
+      // 2. Overwrite playwright/tests/test.json dynamically with latest downloaded paths
+      await saveManifestToTestJson(jsonString);
+
+      // 3. Download each XML file individually with a 250ms stagger (No ZIP!)
+      const successfulFiles = updatedFiles.filter(f => f.xmlContent);
       for (let i = 0; i < successfulFiles.length; i++) {
         const item = successfulFiles[i];
         downloadXmlFile(item.xmlContent, item.xmlFileName);
@@ -393,8 +442,8 @@ export default function BulkCsvSection({ onBackToSingle }) {
           <input
             type="text"
             value={downloadPath}
-            onChange={(e) => setDownloadPath(e.target.value)}
-            placeholder={String.raw`C:\Users\komal\Downloads\convertor`}
+            onChange={(e) => handlePathChange(e.target.value)}
+            placeholder={String.raw`C:\Users\komal\Downloads`}
             className="flex-1 px-3.5 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-800"
           />
         </div>

@@ -7,10 +7,10 @@ import path from 'path';
 // ============================================================================
 
 // 1. Enter your Dynamic Test Suite Name here:
-const DYNAMIC_SUITE_NAME = 'NEWCQ-4859_Javed';
+const DYNAMIC_SUITE_NAME = 'NEWCQ-4869_Sameer';
 
 // 2. Enter your XML/CSV File Upload Path here:
-const XML_FILE_PATH = String.raw`C:\Users\komal\Downloads\convertor\NEWCQ-4859_Javed.xml`;
+const XML_FILE_PATH = String.raw`C:\Users\komal\Downloads\convertor\NEWCQ-4869_Sameer.xml`;
 
 // 3. HTTP Basic Auth Password (preconfigured with working password):
 let HTTP_AUTH_USERNAME = 'cqtesting';
