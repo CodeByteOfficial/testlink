@@ -64,6 +64,8 @@ export default function BulkCsvSection({ onBackToSingle }) {
   const [jsonManifest, setJsonManifest] = useState('');
   const [copiedJson, setCopiedJson] = useState(false);
   const [downloadedZip, setDownloadedZip] = useState(false);
+  const [syncedPath, setSyncedPath] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -229,27 +231,51 @@ export default function BulkCsvSection({ onBackToSingle }) {
     const jsonString = JSON.stringify(manifestData, null, 2);
     setJsonManifest(jsonString);
 
+    // Automatically sync updated JSON directly to playwright/tests/test.json
+    await saveManifestToTestJson(jsonString);
+
     setCurrentProcessingFile('');
     setIsConverting(false);
     setIsConverted(true);
   };
 
-  // Download all XML files and JSON manifest as a single ZIP bundle
+  // Overwrites playwright/tests/test.json dynamically on local filesystem
+  const saveManifestToTestJson = async (jsonData) => {
+    if (!jsonData) return false;
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/save-manifest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: jsonData
+      });
+      if (response.ok) {
+        setSyncedPath(String.raw`C:\Users\komal\Projects\testlink\playwright\tests\test.json`);
+        return true;
+      }
+    } catch (err) {
+      console.warn('[Vite API] Could not auto-save to test.json:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+    return false;
+  };
+
+  // Download all XML files as a single ZIP bundle (NO JSON file is downloaded)
   const handleDownloadZip = async () => {
     if (convertedFiles.length === 0) return;
 
     try {
-      const zip = new JSZip();
+      // 1. Overwrite playwright/tests/test.json dynamically with latest data
+      await saveManifestToTestJson(jsonManifest);
 
-      // Add each converted XML file
+      // 2. Package ONLY XML files in the ZIP (NO JSON in zip or downloads)
+      const zip = new JSZip();
       convertedFiles.forEach(file => {
         if (file.xmlContent) {
           zip.file(file.xmlFileName, file.xmlContent);
         }
       });
-
-      // Add the JSON manifest file
-      zip.file('testlink_files_manifest.json', jsonManifest);
 
       // Generate ZIP blob
       const blob = await zip.generateAsync({
@@ -258,18 +284,15 @@ export default function BulkCsvSection({ onBackToSingle }) {
         compressionOptions: { level: 6 }
       });
 
-      // Trigger download
+      // Trigger download for XMLs ZIP
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `testlink_bulk_xmls_${Date.now()}.zip`;
+      a.download = `testlink_xmls_${Date.now()}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
-      // Also directly trigger JSON download so user has the file immediately on disk
-      handleDownloadJsonOnly();
 
       setDownloadedZip(true);
       setTimeout(() => setDownloadedZip(false), 3000);
@@ -277,20 +300,6 @@ export default function BulkCsvSection({ onBackToSingle }) {
       console.error('Failed to create ZIP', err);
       setError('Failed to generate ZIP download: ' + err.message);
     }
-  };
-
-  // Download JSON manifest file separately
-  const handleDownloadJsonOnly = () => {
-    if (!jsonManifest) return;
-    const blob = new Blob([jsonManifest], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'testlink_files_manifest.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   // Download individual XML file
@@ -532,25 +541,49 @@ export default function BulkCsvSection({ onBackToSingle }) {
                 {downloadedZip ? (
                   <>
                     <Check className="w-4 h-4 text-slate-950" />
-                    Downloaded!
+                    XMLs Downloaded!
                   </>
                 ) : (
                   <>
                     <FolderArchive className="w-4 h-4 text-slate-950" />
-                    Download All (XMLs + JSON ZIP)
+                    Download All XMLs (ZIP)
                   </>
                 )}
               </button>
 
               <button
                 type="button"
-                onClick={handleDownloadJsonOnly}
-                className="inline-flex items-center gap-2 px-4 py-3 text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-all cursor-pointer"
+                onClick={() => saveManifestToTestJson(jsonManifest)}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-2 px-4 py-3 text-xs font-bold text-white bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 rounded-xl transition-all cursor-pointer"
+                title="Force overwrite C:\Users\komal\Projects\testlink\playwright\tests\test.json"
               >
-                <FileJson className="w-4 h-4 text-amber-300" />
-                Download JSON Manifest (.json)
+                {isSyncing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <FileJson className="w-4 h-4 text-amber-300" />
+                    Sync to test.json
+                  </>
+                )}
               </button>
             </div>
+          </div>
+
+          {/* Sync Status Banner */}
+          <div className="flex items-center justify-between p-3.5 px-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                <strong>Dynamic JSON Sync Active:</strong> JSON data is written directly to <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-800">playwright\tests\test.json</code>. No file is downloaded to your browser.
+              </span>
+            </div>
+            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full">
+              Auto-Overwrites on Download
+            </span>
           </div>
 
           {/* Table of Converted Files */}
@@ -559,7 +592,7 @@ export default function BulkCsvSection({ onBackToSingle }) {
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Converted XML Files ({convertedFiles.length})
               </h4>
-              <span className="text-[11px] text-slate-500">Click individual download or use bulk ZIP above</span>
+              <span className="text-[11px] text-slate-500">Click individual download or use bulk XMLs ZIP above</span>
             </div>
 
             <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
@@ -597,7 +630,10 @@ export default function BulkCsvSection({ onBackToSingle }) {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-slate-400">
                 <FileJson className="w-4 h-4 text-amber-400" />
-                <span className="font-semibold text-slate-200">testlink_files_manifest.json</span>
+                <span className="font-semibold text-slate-200">playwright/tests/test.json</span>
+                <span className="text-[10px] text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.2 rounded">
+                  ● Dynamically Overwrites
+                </span>
                 <span className="text-[10px] text-slate-500">({convertedFiles.length} file entries)</span>
               </div>
 
