@@ -15,9 +15,11 @@ import {
   FolderOpen, 
   ArrowRight,
   FileSpreadsheet,
-  FileText
+  FileText,
+  Play
 } from 'lucide-react';
 import JSZip from 'jszip';
+import RunBabyRunModal from './RunBabyRunModal';
 import { 
   parseUniversalFile, 
   SUPPORTED_EXTENSIONS, 
@@ -68,6 +70,73 @@ export default function BulkCsvSection({ onBackToSingle }) {
   const [syncedPath, setSyncedPath] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Automation execution state for "Run baby run"
+  const [isAutomationRunning, setIsAutomationRunning] = useState(false);
+  const [automationStatus, setAutomationStatus] = useState('idle');
+  const [automationLogs, setAutomationLogs] = useState('');
+  const [isAutomationModalOpen, setIsAutomationModalOpen] = useState(false);
+  const pollingRef = useRef(null);
+
+  const checkAutomationStatus = async () => {
+    try {
+      const res = await fetch('/api/login-status');
+      if (res.ok) {
+        const data = await res.json();
+        setIsAutomationRunning(data.isRunning);
+        setAutomationStatus(data.status);
+        if (data.logs) setAutomationLogs(data.logs);
+
+        if (!data.isRunning && pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      }
+    } catch (_) {}
+  };
+
+  const handleRunBabyRun = async () => {
+    setIsAutomationModalOpen(true);
+    setIsAutomationRunning(true);
+    setAutomationStatus('running');
+
+    try {
+      if (jsonManifest) {
+        await saveManifestToTestJson(jsonManifest);
+      }
+
+      const res = await fetch('/api/run-login', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok && !data.alreadyRunning) {
+        setError(data.error || 'Failed to start automation');
+      }
+
+      if (!pollingRef.current) {
+        pollingRef.current = setInterval(checkAutomationStatus, 1500);
+      }
+    } catch (err) {
+      setError('Automation error: ' + err.message);
+      setIsAutomationRunning(false);
+    }
+  };
+
+  const handleStopAutomation = async () => {
+    try {
+      await fetch('/api/stop-login', { method: 'POST' });
+      setIsAutomationRunning(false);
+      setAutomationStatus('idle');
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    } catch (_) {}
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
 
   const fileInputRef = useRef(null);
 
@@ -424,15 +493,36 @@ export default function BulkCsvSection({ onBackToSingle }) {
           </div>
         </div>
 
-        {onBackToSingle && (
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
           <button
             type="button"
-            onClick={onBackToSingle}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs transition-colors self-start sm:self-auto"
+            onClick={handleRunBabyRun}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-rose-500 via-pink-600 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+            title="Execute npm run login automation script"
           >
-            Switch to Single File Mode
+            {isAutomationRunning ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                <span>Running Baby Running...</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Run baby run</span>
+              </>
+            )}
           </button>
-        )}
+
+          {onBackToSingle && (
+            <button
+              type="button"
+              onClick={onBackToSingle}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs transition-colors"
+            >
+              Switch to Single File Mode
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Target Directory Path Input */}
@@ -653,6 +743,25 @@ export default function BulkCsvSection({ onBackToSingle }) {
                   </>
                 )}
               </button>
+
+              <button
+                type="button"
+                onClick={handleRunBabyRun}
+                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-rose-500 via-pink-600 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 rounded-xl shadow-lg hover:shadow-rose-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                title="Execute Playwright automation: npm run login"
+              >
+                {isAutomationRunning ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Running Baby Running...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 fill-white text-white" />
+                    <span>Run baby run</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
@@ -748,6 +857,17 @@ export default function BulkCsvSection({ onBackToSingle }) {
 
         </div>
       )}
+
+      {/* Automation Modal */}
+      <RunBabyRunModal
+        isOpen={isAutomationModalOpen}
+        onClose={() => setIsAutomationModalOpen(false)}
+        isRunning={isAutomationRunning}
+        status={automationStatus}
+        logs={automationLogs}
+        onStart={handleRunBabyRun}
+        onStop={handleStopAutomation}
+      />
 
     </div>
   );
