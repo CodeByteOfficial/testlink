@@ -8,7 +8,8 @@ import {
   RefreshCw, 
   Settings2,
   FileCode2,
-  FileText
+  FileText,
+  Files
 } from 'lucide-react';
 import { ACCEPT_FILE_TYPES, SUPPORTED_EXTENSIONS } from '../utils/fileParser';
 
@@ -37,7 +38,8 @@ export default function UploadSection({
   setRootTag,
   recordTag,
   setRecordTag,
-  error
+  error,
+  onSwitchToBulk
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [showTagOptions, setShowTagOptions] = useState(false);
@@ -179,16 +181,31 @@ export default function UploadSection({
           <p className="text-sm text-slate-500 mt-1 mb-5">
             Supported formats: <strong className="text-slate-700">.csv</strong>, <strong className="text-slate-700">.xlsx</strong>, <strong className="text-slate-700">.xls</strong>, <strong className="text-slate-700">.tsv</strong>, or <strong className="text-slate-700">.json</strong>
           </p>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              triggerBrowse();
-            }}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Browse File
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                triggerBrowse();
+              }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Browse Single File
+            </button>
+            {onSwitchToBulk && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSwitchToBulk();
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all shadow-2xs"
+              >
+                <Files className="w-4 h-4 text-indigo-600" />
+                Bulk CSV Upload
+              </button>
+            )}
+          </div>
           <p className="text-xs text-slate-400 mt-4">
             Processed 100% locally in your browser &bull; Preserves raw numbers, leading zeros, and Unicode
           </p>

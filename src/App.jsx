@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
 import UploadSection from './components/UploadSection';
+import BulkCsvSection from './components/BulkCsvSection';
 import CsvPreviewSection from './components/CsvPreviewSection';
 import ConversionProgress from './components/ConversionProgress';
 import ResultsSection from './components/ResultsSection';
@@ -10,6 +11,7 @@ import { generateCombinedXml } from './utils/xmlGenerator';
 import { ShieldCheck, HelpCircle } from 'lucide-react';
 
 export default function App() {
+  const [activeMode, setActiveMode] = useState('single'); // 'single' | 'bulk'
   const [file, setFile] = useState(null);
   const [fileFormat, setFileFormat] = useState('csv');
   const [sheetNames, setSheetNames] = useState([]);
@@ -166,100 +168,111 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
-      {/* Header */}
+      {/* Header with Mode Switcher */}
       <Header
         onLoadSample={handleLoadSample}
         hasUploadedFile={!!file}
+        activeMode={activeMode}
+        setActiveMode={setActiveMode}
       />
 
       {/* Main Workspace Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
-        {/* Upload Section */}
-        <UploadSection
-          file={file}
-          fileFormat={fileFormat}
-          sheetNames={sheetNames}
-          selectedSheet={selectedSheet}
-          onSheetChange={handleSheetChange}
-          onFileSelect={handleFileSelect}
-          onRemoveFile={handleRemoveFile}
-          onConvert={handleConvert}
-          isConverting={isConverting}
-          isConverted={isConverted}
-          totalRecords={parsedData ? parsedData.totalRecords : null}
-          rootTag={rootTag}
-          setRootTag={setRootTag}
-          recordTag={recordTag}
-          setRecordTag={setRecordTag}
-          error={error}
-        />
+        {activeMode === 'bulk' ? (
+          /* Bulk CSV Converter View */
+          <BulkCsvSection onBackToSingle={() => setActiveMode('single')} />
+        ) : (
+          /* Single File Converter View */
+          <>
+            {/* Upload Section */}
+            <UploadSection
+              file={file}
+              fileFormat={fileFormat}
+              sheetNames={sheetNames}
+              selectedSheet={selectedSheet}
+              onSheetChange={handleSheetChange}
+              onFileSelect={handleFileSelect}
+              onRemoveFile={handleRemoveFile}
+              onConvert={handleConvert}
+              isConverting={isConverting}
+              isConverted={isConverted}
+              totalRecords={parsedData ? parsedData.totalRecords : null}
+              rootTag={rootTag}
+              setRootTag={setRootTag}
+              recordTag={recordTag}
+              setRecordTag={setRecordTag}
+              error={error}
+              onSwitchToBulk={() => setActiveMode('bulk')}
+            />
 
-        {/* Data Preview Section */}
-        {parsedData && (
-          <CsvPreviewSection
-            parsedData={parsedData}
-            totalRecords={parsedData.totalRecords}
-            totalColumns={parsedData.totalColumns}
-            headers={parsedData.headers}
-            headerMappings={parsedData.headerMappings}
-            previewRows={parsedData.previewRows}
-            warnings={parsedData.warnings}
-            fileFormat={fileFormat}
-          />
-        )}
+            {/* Data Preview Section */}
+            {parsedData && (
+              <CsvPreviewSection
+                parsedData={parsedData}
+                totalRecords={parsedData.totalRecords}
+                totalColumns={parsedData.totalColumns}
+                headers={parsedData.headers}
+                headerMappings={parsedData.headerMappings}
+                previewRows={parsedData.previewRows}
+                warnings={parsedData.warnings}
+                fileFormat={fileFormat}
+              />
+            )}
 
-        {/* Conversion Progress Section */}
-        <ConversionProgress
-          isConverting={isConverting}
-          progress={progress}
-          currentCount={convertedCount}
-          totalRecords={parsedData ? parsedData.totalRecords : 0}
-          isConverted={isConverted}
-          xmlFileName={xmlFileName}
-        />
+            {/* Conversion Progress Section */}
+            <ConversionProgress
+              isConverting={isConverting}
+              progress={progress}
+              currentCount={convertedCount}
+              totalRecords={parsedData ? parsedData.totalRecords : 0}
+              isConverted={isConverted}
+              xmlFileName={xmlFileName}
+            />
 
-        {/* Single Consolidated XML Results Section with Transfer to TestLink */}
-        {isConverted && (
-          <ResultsSection
-            combinedXml={combinedXml}
-            xmlFileName={xmlFileName}
-            totalRecords={parsedData ? parsedData.totalRecords : 0}
-            records={generatedRecords}
-            headers={parsedData ? parsedData.headers : []}
-            onClearAll={handleClearAll}
-            onOpenTestLink={() => setIsTestLinkModalOpen(true)}
-          />
-        )}
+            {/* Single Consolidated XML Results Section with Transfer to TestLink */}
+            {isConverted && (
+              <ResultsSection
+                combinedXml={combinedXml}
+                xmlFileName={xmlFileName}
+                totalRecords={parsedData ? parsedData.totalRecords : 0}
+                records={generatedRecords}
+                headers={parsedData ? parsedData.headers : []}
+                onClearAll={handleClearAll}
+                onOpenTestLink={() => setIsTestLinkModalOpen(true)}
+              />
+            )}
 
-        {/* Feature Explanatory Card if no file uploaded */}
-        {!file && (
-          <div className="border border-slate-200/80 bg-white/60 rounded-2xl p-6 sm:p-8 backdrop-blur-xs">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-blue-600" />
-              All Records in One File &amp; TestLink Transfer
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
-              <div className="space-y-1.5">
-                <div className="font-semibold text-slate-800 text-sm">1. Multi-Format to One XML</div>
-                <p>
-                  Upload <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700">.csv</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">.xlsx / .xls</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-amber-700">.tsv</code>, or <code className="bg-slate-100 px-1 py-0.5 rounded text-purple-700">.json</code> to bundle all records into a single <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700">.xml</code> file.
-                </p>
+            {/* Feature Explanatory Card if no file uploaded */}
+            {!file && (
+              <div className="border border-slate-200/80 bg-white/60 rounded-2xl p-6 sm:p-8 backdrop-blur-xs">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-blue-600" />
+                  All Records in One File &amp; TestLink Transfer
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
+                  <div className="space-y-1.5">
+                    <div className="font-semibold text-slate-800 text-sm">1. Multi-Format to One XML</div>
+                    <p>
+                      Upload <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700">.csv</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">.xlsx / .xls</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-amber-700">.tsv</code>, or <code className="bg-slate-100 px-1 py-0.5 rounded text-purple-700">.json</code> to bundle all records into a single <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-700">.xml</code> file.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="font-semibold text-slate-800 text-sm">2. Bulk CSV Batch Conversion</div>
+                    <p>
+                      Use the <strong>Bulk CSV</strong> mode to drop multiple CSV files at once, convert each file to XML, and export a JSON manifest of file paths for automation.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="font-semibold text-slate-800 text-sm">3. Transfer to TestLink</div>
+                    <p>
+                      Use the <strong>Transfer to TestLink</strong> button to automatically launch <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">testing.creditq.co.in</code>, navigate to Test Specification, and access the Settings Actions cog after a 3-second delay.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <div className="font-semibold text-slate-800 text-sm">2. Instant Download &amp; Copy</div>
-                <p>
-                  Download the unified XML file or copy its raw content directly to clipboard with one click.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <div className="font-semibold text-slate-800 text-sm">3. Transfer to TestLink</div>
-                <p>
-                  Use the <strong>Transfer to TestLink</strong> button to automatically launch <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">testing.creditq.co.in</code>, navigate to Test Specification, and access the Settings Actions cog after a 3-second delay.
-                </p>
-              </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
 
       </main>
