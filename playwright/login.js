@@ -744,13 +744,31 @@ function getTestCaseCountFromFile(filePath) {
       await waitStep(page, `Suite ID ${suiteId} - Step 3.13: Suite Selected in Add/Remove Tree`);
 
       // ------------------------------------------------------------------------
-      // STEP 3.14: Select Tester "harsh" (value="9")
+      // STEP 3.14: Select Tester (by ID value="9" or by Username)
       // ------------------------------------------------------------------------
-      console.log(`\n[Suite ID ${suiteId} - Step 3.14] Selecting Tester value="${TESTER_ID}" (harsh) ...`);
+      console.log(`\n[Suite ID ${suiteId} - Step 3.14] Selecting Tester (ID: "${TESTER_ID}", User: "${TESTLINK_USER}") ...`);
       const testerSelect = await findInFrames(page, 'select#testerID, select[name="testerID"]');
       if (testerSelect) {
-        await testerSelect.selectOption(TESTER_ID);
-        console.log('   ✅ Tester selected: harsh (value: 9)');
+        let selectedTester = false;
+        if (TESTER_ID) {
+          try {
+            await testerSelect.selectOption(String(TESTER_ID));
+            console.log(`   ✅ Tester selected by ID value: "${TESTER_ID}"`);
+            selectedTester = true;
+          } catch (_) { }
+        }
+        if (!selectedTester && TESTLINK_USER) {
+          try {
+            await testerSelect.selectOption({ label: TESTLINK_USER });
+            console.log(`   ✅ Tester selected by name label: "${TESTLINK_USER}"`);
+            selectedTester = true;
+          } catch (_) { }
+        }
+        if (!selectedTester) {
+          // If neither matched, inspect available options for debug info
+          const options = await testerSelect.locator('option').allInnerTexts().catch(() => []);
+          console.log(`   ℹ️ Available testers in dropdown: ${options.map(o => o.trim()).filter(Boolean).join(', ')}`);
+        }
       }
       await waitStep(page, `Suite ID ${suiteId} - Step 3.14: Tester Selected`);
 
