@@ -1,7 +1,26 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
+
+// ----------------------------------------------------------------------------
+// ⚙️ SMART ENVIRONMENT LOADER (Syncs and overrides .env and .env.example)
+// ----------------------------------------------------------------------------
+const envPath = path.resolve('.env');
+const envExamplePath = path.resolve('.env.example');
+
+// If .env.example was recently edited, automatically sync its changes into .env
+if (fs.existsSync(envExamplePath)) {
+  if (!fs.existsSync(envPath) || fs.statSync(envExamplePath).mtimeMs > fs.statSync(envPath).mtimeMs) {
+    console.log('🔄 Detected updated settings in .env.example, automatically syncing to .env...');
+    try {
+      fs.copyFileSync(envExamplePath, envPath);
+    } catch (_) {}
+  }
+}
+
+// Load with override: true so file values strictly take precedence over any cached process.env
+dotenv.config({ path: envPath, override: true });
 
 // ============================================================================
 // 🎯 DYNAMIC DATA SOURCE (AUTOMATICALLY LOADED FROM playwright/tests/test.json)
@@ -45,12 +64,12 @@ const TESTLINK_USER = process.env.TESTLINK_USER || 'harsh';
 const TESTLINK_PASS = process.env.TESTLINK_PASS || '9ZvSgQc466';
 
 const TARGET_PROJECT_VALUE = process.env.TARGET_PROJECT_VALUE || '1';            // CQ:CreditQ
-const TARGET_PLAN_LABEL = process.env.TARGET_PLAN_LABEL || 'New Admin Portal';
+const TARGET_PLAN_LABEL = process.env.TARGET_PLAN_LABEL;
 
 const TESTER_ID = process.env.TESTER_ID || '9';                                 // harsh
 
 // Target Build Configuration: Loaded from .env (defaults to '94' and 'Round _1')
-const TARGET_BUILD_ID = process.env.TARGET_BUILD_ID || '94';
+const TARGET_BUILD_ID = process.env.TARGET_BUILD_ID;
 const TARGET_BUILD_NAME = process.env.TARGET_BUILD_NAME || 'Round _1';
 
 const DELAY_MS = Number(process.env.DELAY_MS) || 3000;                          // 3 seconds delay after each step
@@ -287,8 +306,8 @@ function getTestCaseCountFromFile(filePath) {
   // Gracefully close browser if user terminates process
   const cleanup = async () => {
     try {
-      await browser.close().catch(() => {});
-    } catch (_) {}
+      await browser.close().catch(() => { });
+    } catch (_) { }
     process.exit(0);
   };
   process.on('SIGINT', cleanup);
