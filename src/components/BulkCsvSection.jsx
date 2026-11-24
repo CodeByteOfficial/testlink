@@ -55,7 +55,7 @@ function getFormatBadge(fmt) {
   }
 }
 
-export default function BulkCsvSection({ onBackToSingle }) {
+export default function BulkCsvSection() {
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [downloadPath, setDownloadPath] = useState(String.raw`C:\Users\komal\Downloads`);
@@ -507,15 +507,6 @@ export default function BulkCsvSection({ onBackToSingle }) {
           </div>
         </div>
 
-        {onBackToSingle && (
-          <button
-            type="button"
-            onClick={onBackToSingle}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded-xl transition-all self-start sm:self-auto cursor-pointer"
-          >
-            Switch to Single Mode
-          </button>
-        )}
       </div>
 
       {/* Target Directory Path Input */}

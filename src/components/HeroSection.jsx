@@ -16,7 +16,7 @@ import {
   Activity
 } from 'lucide-react';
 
-export default function HeroSection({ activeMode, setActiveMode, onScrollToWorkspace }) {
+export default function HeroSection({ onScrollToWorkspace }) {
   return (
     <div className="relative overflow-hidden pt-8 pb-16">
       
@@ -54,10 +54,7 @@ export default function HeroSection({ activeMode, setActiveMode, onScrollToWorks
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <button
             type="button"
-            onClick={() => {
-              setActiveMode('bulk');
-              onScrollToWorkspace();
-            }}
+            onClick={onScrollToWorkspace}
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-xs sm:text-sm font-bold text-slate-950 bg-white hover:bg-slate-100 shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-blue-600 fill-blue-600" />
@@ -66,10 +63,7 @@ export default function HeroSection({ activeMode, setActiveMode, onScrollToWorks
 
           <button
             type="button"
-            onClick={() => {
-              setActiveMode('bulk');
-              onScrollToWorkspace();
-            }}
+            onClick={onScrollToWorkspace}
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-xs sm:text-sm font-semibold text-slate-300 bg-slate-900/80 hover:bg-slate-800/90 border border-slate-700/80 hover:border-cyan-400/50 backdrop-blur-md shadow-lg transition-all hover:text-white cursor-pointer group"
           >
             <span>Launch "Run baby run"</span>
