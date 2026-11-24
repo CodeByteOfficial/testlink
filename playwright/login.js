@@ -2,30 +2,33 @@ import dotenv from 'dotenv';
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 // ----------------------------------------------------------------------------
-// ⚙️ SMART ENVIRONMENT LOADER (Syncs and overrides .env and .env.example)
+// ⚙️ ENVIRONMENT LOADER (.env for private local config)
 // ----------------------------------------------------------------------------
 const envPath = path.resolve('.env');
 const envExamplePath = path.resolve('.env.example');
 
-// If .env.example was recently edited, automatically sync its changes into .env
-if (fs.existsSync(envExamplePath)) {
-  if (!fs.existsSync(envPath) || fs.statSync(envExamplePath).mtimeMs > fs.statSync(envPath).mtimeMs) {
-    console.log('🔄 Detected updated settings in .env.example, automatically syncing to .env...');
-    try {
-      fs.copyFileSync(envExamplePath, envPath);
-    } catch (_) {}
-  }
+// If .env does not exist yet, initialize it from template
+if (!fs.existsSync(envPath) && fs.existsSync(envExamplePath)) {
+  try {
+    fs.copyFileSync(envExamplePath, envPath);
+    console.log('📄 Initialized .env from .env.example template.');
+  } catch (_) {}
 }
 
-// Load with override: true so file values strictly take precedence over any cached process.env
-dotenv.config({ path: envPath, override: true });
+// Load .env (private local config) with override
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath, override: true });
+} else if (fs.existsSync(envExamplePath)) {
+  dotenv.config({ path: envExamplePath, override: true });
+}
 
 // ============================================================================
-// 🎯 DYNAMIC DATA SOURCE (AUTOMATICALLY LOADED FROM playwright/tests/test.json)
+// 🎯 DYNAMIC DATA SOURCE (AUTOMATICALLY LOADED FROM TEST_JSON_PATH / test.json)
 // ============================================================================
-const testJsonPath = path.resolve('playwright/tests/test.json');
+const testJsonPath = path.resolve(process.env.TEST_JSON_PATH || 'playwright/tests/test.json');
 let testSuites = [];
 
 if (fs.existsSync(testJsonPath)) {
@@ -41,7 +44,7 @@ if (fs.existsSync(testJsonPath)) {
 }
 
 if (!testSuites || testSuites.length === 0) {
-  console.error('❌ CRITICAL: No test suites found in playwright/tests/test.json!');
+  console.error(`❌ CRITICAL: No test suites found in ${testJsonPath}!`);
   console.error('   Please run the web converter tool first to generate test.json.');
   process.exit(1);
 }
@@ -57,33 +60,47 @@ testSuites.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
 // TARGET_BUILD_NAME, TARGET_PLAN_LABEL, etc.). Script bina code change kiye
 // automatically .env file se saari settings read kar legi!
 
-const HTTP_AUTH_USERNAME = process.env.HTTP_AUTH_USERNAME || process.env.BASIC_AUTH_USER || 'cqtesting';
-const HTTP_AUTH_PASSWORD = process.env.HTTP_AUTH_PASSWORD || process.env.BASIC_AUTH_PASS || 'CqTest@2025';
+const HTTP_AUTH_USERNAME = process.env.HTTP_AUTH_USERNAME || 'cqtesting';
+const HTTP_AUTH_PASSWORD = process.env.HTTP_AUTH_PASSWORD || 'CqTest@2025';
+
+const TESTLINK_BASE_URL = (process.env.TESTLINK_BASE_URL || 'https://testing.creditq.co.in').replace(/\/+$/, '');
+const TESTLINK_LOGIN_URL = process.env.TESTLINK_LOGIN_URL || `${TESTLINK_BASE_URL}/login.php`;
 
 const TESTLINK_USER = process.env.TESTLINK_USER || 'harsh';
 const TESTLINK_PASS = process.env.TESTLINK_PASS || '9ZvSgQc466';
 
 const TARGET_PROJECT_VALUE = process.env.TARGET_PROJECT_VALUE || '1';            // CQ:CreditQ
+const TARGET_PROJECT_NAME = process.env.TARGET_PROJECT_NAME || 'CreditQ';
 const TARGET_PLAN_LABEL = process.env.TARGET_PLAN_LABEL;
 
 const TESTER_ID = process.env.TESTER_ID || '9';                                 // harsh
 
-// Target Build Configuration: Loaded from .env (defaults to '94' and 'Round _1')
+// Target Build Configuration: Loaded from .env
 const TARGET_BUILD_ID = process.env.TARGET_BUILD_ID;
 const TARGET_BUILD_NAME = process.env.TARGET_BUILD_NAME || 'Round _1';
 
-const DELAY_MS = Number(process.env.DELAY_MS) || 3000;                          // 3 seconds delay after each step
+// Delays & Timeouts
+const DELAY_MS = Number(process.env.DELAY_MS) || 3000;                          // step delay in ms
+const STEP_TIMEOUT_MS = Number(process.env.STEP_TIMEOUT_MS) || 30000;           // step timeout in ms
+const HEADLESS = process.env.HEADLESS === 'true';                               // headless mode
+const SLOW_MO = Number(process.env.SLOW_MO) || 300;                             // action slow-mo in ms
+
+// File Storage & Upload Directories
+const XML_DIR = process.env.XML_DIR;
 
 console.log('\n============================================================');
 console.log('🚀 TESTLINK PLAYWRIGHT AUTOMATION RUNNER');
 console.log('============================================================');
 console.log('📋 Active Environment Config (.env):');
-console.log(`   • Test Project Value : ${TARGET_PROJECT_VALUE} (CQ:CreditQ)`);
+console.log(`   • TestLink Base URL  : ${TESTLINK_BASE_URL}`);
+console.log(`   • Test Project       : ${TARGET_PROJECT_NAME} (Value: ${TARGET_PROJECT_VALUE})`);
 console.log(`   • Test Plan Label    : "${TARGET_PLAN_LABEL}"`);
 console.log(`   • Tester ID / User   : ${TESTER_ID} (${TESTLINK_USER})`);
 console.log(`   • Target Build ID    : ${TARGET_BUILD_ID || 'Auto-detect'}`);
 console.log(`   • Target Build Name  : "${TARGET_BUILD_NAME || 'Auto-detect'}"`);
+console.log(`   • XML Directory      : ${XML_DIR || 'Auto-detect (Downloads)'}`);
 console.log(`   • Step Delay         : ${DELAY_MS} ms`);
+console.log(`   • Browser Mode       : ${HEADLESS ? 'Headless' : 'Visible Window'}`);
 console.log('============================================================\n');
 
 // ============================================================================
@@ -201,8 +218,8 @@ async function expandSuiteInTree(page, suiteName) {
 
   for (const frame of [page, ...page.frames()]) {
     try {
-      // 1. Ensure parent/root node CreditQ is expanded if present and collapsed
-      const rootEl = frame.locator('.x-tree-node-el').filter({ hasText: 'CreditQ' }).first();
+      // 1. Ensure parent/root node (TARGET_PROJECT_NAME) is expanded if present and collapsed
+      const rootEl = frame.locator('.x-tree-node-el').filter({ hasText: TARGET_PROJECT_NAME }).first();
       if (await rootEl.isVisible().catch(() => false)) {
         const rootCollapsed = await rootEl.evaluate(el => el.classList.contains('x-tree-node-collapsed')).catch(() => false);
         if (rootCollapsed) {
@@ -253,12 +270,21 @@ async function expandSuiteInTree(page, suiteName) {
 
 function resolveUploadPath(inputPath) {
   if (!inputPath) return null;
+  const fileName = path.basename(inputPath);
+  const systemDownloadsDir = path.join(os.homedir(), 'Downloads');
+
   const candidates = [
-    inputPath,
+    inputPath,                                                                 // 1. Exact path from test.json
     inputPath.replace(/\\/g, '/'),
     path.normalize(inputPath),
     path.resolve(inputPath),
-  ];
+    XML_DIR ? path.join(XML_DIR, fileName) : null,                             // 2. Configured XML_DIR in .env
+    XML_DIR ? path.resolve(XML_DIR, fileName) : null,
+    path.join(systemDownloadsDir, fileName),                                   // 3. Current User's Downloads folder
+    path.resolve('downloads', fileName),                                       // 4. Project downloads directory
+    path.resolve(fileName),                                                    // 5. Current working directory
+  ].filter(Boolean);
+
   for (const c of candidates) {
     if (fs.existsSync(c)) return path.resolve(c);
   }
@@ -298,8 +324,8 @@ function getTestCaseCountFromFile(filePath) {
   console.log('============================================================\n');
 
   const browser = await chromium.launch({
-    headless: false,
-    slowMo: 300,
+    headless: HEADLESS,
+    slowMo: SLOW_MO,
     args: ['--start-maximized'],
   });
 
@@ -334,17 +360,24 @@ function getTestCaseCountFromFile(filePath) {
     // ------------------------------------------------------------------------
     // STEP 0: Login (RUNS ONCE)
     // ------------------------------------------------------------------------
-    console.log('[Step 0] Navigating to https://testing.creditq.co.in/login.php ...');
+    console.log(`[Step 0] Navigating to ${TESTLINK_LOGIN_URL} ...`);
 
-    // Use embedded authentication URL to guarantee instant connection without popup delay
-    const authUrl = `https://${encodeURIComponent(HTTP_AUTH_USERNAME)}:${encodeURIComponent(HTTP_AUTH_PASSWORD)}@testing.creditq.co.in/login.php`;
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(TESTLINK_LOGIN_URL);
+    } catch (_) {
+      parsedUrl = new URL('https://testing.creditq.co.in/login.php');
+    }
+    const authHost = parsedUrl.host;
+    const authPath = parsedUrl.pathname + parsedUrl.search;
+    const authUrl = `${parsedUrl.protocol}//${encodeURIComponent(HTTP_AUTH_USERNAME)}:${encodeURIComponent(HTTP_AUTH_PASSWORD)}@${authHost}${authPath}`;
 
     let response;
     try {
-      response = await page.goto(authUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      response = await page.goto(authUrl, { waitUntil: 'domcontentloaded', timeout: STEP_TIMEOUT_MS });
     } catch (_) {
       console.log('Retrying with direct URL...');
-      response = await page.goto('https://testing.creditq.co.in/login.php', { waitUntil: 'commit', timeout: 20000 });
+      response = await page.goto(TESTLINK_LOGIN_URL, { waitUntil: 'commit', timeout: 20000 });
     }
 
     if (response && response.status() === 401) {
@@ -370,13 +403,13 @@ function getTestCaseCountFromFile(filePath) {
     await waitStep(page, 'Login Submitted');
 
     // ------------------------------------------------------------------------
-    // STEP 1: Select Test Project "CQ:CreditQ" (value="1") (RUNS ONCE)
+    // STEP 1: Select Test Project (RUNS ONCE)
     // ------------------------------------------------------------------------
-    console.log(`\n[Step 1] Selecting Test Project option value="${TARGET_PROJECT_VALUE}" (CQ:CreditQ) ...`);
+    console.log(`\n[Step 1] Selecting Test Project option value="${TARGET_PROJECT_VALUE}" (${TARGET_PROJECT_NAME}) ...`);
     const projectSelect = await findInFrames(page, 'select[name="testproject"]');
     if (projectSelect) {
       await projectSelect.selectOption(TARGET_PROJECT_VALUE);
-      console.log('   ✅ Selected Project CQ:CreditQ (value: 1)');
+      console.log(`   ✅ Selected Project ${TARGET_PROJECT_NAME} (value: ${TARGET_PROJECT_VALUE})`);
     }
     await waitStep(page, 'Step 1: Project Selected');
 
@@ -980,7 +1013,7 @@ function getTestCaseCountFromFile(filePath) {
         (await rootEl.locator('img.x-tree-elbow-end-minus, img.x-tree-elbow-minus').count().catch(() => 0) > 0);
 
       if (isRootExpanded) {
-        console.log('   ℹ️ [Step 1] Root node (CreditQ / 6.6 Release) is ALREADY expanded.');
+        console.log(`   ℹ️ [Step 1] Root node (${TARGET_PROJECT_NAME} / ${TARGET_PLAN_LABEL}) is ALREADY expanded.`);
       } else {
         const rootPlus = rootEl.locator('img.x-tree-elbow-end-plus, img.x-tree-elbow-plus').first();
         if (await rootPlus.count().catch(() => 0) > 0) {

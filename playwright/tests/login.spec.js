@@ -1,22 +1,26 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: path.resolve('.env'), override: true });
 
 // ============================================================================
-// 🎯 USER INPUT VARIABLES (ENTER THESE 2 VALUES BEFORE RUNNING TESTS)
+// 🎯 USER INPUT VARIABLES (LOADED FROM ENVIRONMENT OR FALLBACKS)
 // ============================================================================
-const DYNAMIC_SUITE_NAME = 'NEWCQ-4918_Anoop';
-const XML_FILE_PATH = String.raw`C:\Users\komal\Downloads\testign\NEWCQ-4918_Anoop.xml`;
+const DYNAMIC_SUITE_NAME = process.env.DYNAMIC_SUITE_NAME || 'NEWCQ-4918_Anoop';
+const XML_FILE_PATH = process.env.XML_FILE_PATH || path.resolve('playwright/xml/test.xml');
 
 // ============================================================================
-// ⚙️ FIXED SYSTEM CONFIGURATION
+// ⚙️ ENVIRONMENT CONFIGURATION (.env)
 // ============================================================================
-const TESTLINK_USER = 'harsh';
-const TESTLINK_PASS = '9ZvSgQc466';
-const TARGET_PROJECT_VALUE = '1';            // CQ:CreditQ
-const TARGET_PLAN_LABEL = '6.6 Release';     // 6.6 Release
-const TESTER_ID = '9';                       // harsh
-const BUILD_ID = '92';                       // 6.6 Round _1
-const DELAY_MS = 8000;
+const TESTLINK_USER = process.env.TESTLINK_USER || 'harsh';
+const TESTLINK_PASS = process.env.TESTLINK_PASS || '9ZvSgQc466';
+const TARGET_PROJECT_VALUE = process.env.TARGET_PROJECT_VALUE || '1';            // CQ:CreditQ
+const TARGET_PLAN_LABEL = process.env.TARGET_PLAN_LABEL || '6.7.1 Release';
+const TESTER_ID = process.env.TESTER_ID || '9';                                 // harsh
+const BUILD_ID = process.env.TARGET_BUILD_ID || '96';
+const DELAY_MS = Number(process.env.DELAY_MS) || 3000;
 
 async function findInFrames(page, selector, timeoutMs = 8000) {
   const startTime = Date.now();

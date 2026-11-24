@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   UploadCloud, 
   Files, 
@@ -73,6 +73,18 @@ export default function BulkCsvSection() {
   const [syncedPath, setSyncedPath] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Automatically fetch default user download path from system environment
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.defaultDownloadPath) {
+          setDownloadPath(data.defaultDownloadPath);
+        }
+      })
+      .catch(() => { });
+  }, []);
 
   // Automation execution state for "Run baby run"
   const [isAutomationRunning, setIsAutomationRunning] = useState(false);
@@ -367,8 +379,9 @@ export default function BulkCsvSection() {
         headers: { 'Content-Type': 'application/json' },
         body: jsonData
       });
+      const result = await response.json().catch(() => ({}));
       if (response.ok) {
-        setSyncedPath(String.raw`C:\Users\komal\Projects\testlink\playwright\tests\test.json`);
+        setSyncedPath(result.path || 'playwright/tests/test.json');
         return true;
       }
     } catch (err) {

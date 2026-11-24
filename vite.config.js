@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { spawn, exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -50,9 +51,27 @@ function saveTestJsonPlugin() {
     name: 'save-test-json-plugin',
     configureServer(server) {
       server.middlewares.use('/api/save-manifest', handler);
+      server.middlewares.use('/api/config', (req, res) => {
+        const envXmlDir = process.env.XML_DIR || '';
+        const systemDownloads = path.join(os.homedir(), 'Downloads');
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+          defaultDownloadPath: envXmlDir || systemDownloads,
+          envXmlDir: envXmlDir
+        }));
+      });
     },
     configurePreviewServer(server) {
       server.middlewares.use('/api/save-manifest', handler);
+      server.middlewares.use('/api/config', (req, res) => {
+        const envXmlDir = process.env.XML_DIR || '';
+        const systemDownloads = path.join(os.homedir(), 'Downloads');
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+          defaultDownloadPath: envXmlDir || systemDownloads,
+          envXmlDir: envXmlDir
+        }));
+      });
     }
   };
 }
