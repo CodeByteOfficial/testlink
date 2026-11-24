@@ -3,7 +3,6 @@ import {
   UploadCloud, 
   Files, 
   Trash2, 
-  Download, 
   FileJson, 
   CheckCircle2, 
   AlertCircle, 
@@ -708,26 +707,6 @@ export default function BulkCsvSection() {
                   </>
                 )}
               </button>
-
-              <button
-                type="button"
-                onClick={() => saveManifestToTestJson(jsonManifest)}
-                disabled={isSyncing}
-                className="inline-flex items-center gap-2 px-4 py-3.5 text-xs font-bold text-white bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 rounded-xl transition-all cursor-pointer"
-                title="Force overwrite C:\Users\komal\Projects\testlink\playwright\tests\test.json"
-              >
-                {isSyncing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                    Syncing...
-                  </>
-                ) : (
-                  <>
-                    <FileJson className="w-4 h-4 text-amber-300" />
-                    Sync to test.json
-                  </>
-                )}
-              </button>
             </div>
           </div>
 
@@ -770,14 +749,10 @@ export default function BulkCsvSection() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadSingleXml(item)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-cyan-300 hover:text-white bg-cyan-950/50 hover:bg-cyan-900/50 rounded-lg border border-cyan-500/30 transition-colors cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-cyan-400" />
-                    Download XML
-                  </button>
+                  <div className="shrink-0 flex items-center gap-1.5 text-[11px] font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                    <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
+                    <span>Ready</span>
+                  </div>
                 </div>
               ))}
             </div>
