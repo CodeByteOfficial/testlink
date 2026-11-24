@@ -60,30 +60,30 @@ testSuites.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
 // TARGET_BUILD_NAME, TARGET_PLAN_LABEL, etc.). Script bina code change kiye
 // automatically .env file se saari settings read kar legi!
 
-const HTTP_AUTH_USERNAME = process.env.HTTP_AUTH_USERNAME || 'cqtesting';
-const HTTP_AUTH_PASSWORD = process.env.HTTP_AUTH_PASSWORD || 'CqTest@2025';
+const HTTP_AUTH_USERNAME = process.env.HTTP_AUTH_USERNAME;
+const HTTP_AUTH_PASSWORD = process.env.HTTP_AUTH_PASSWORD;
 
-const TESTLINK_BASE_URL = (process.env.TESTLINK_BASE_URL || 'https://testing.creditq.co.in').replace(/\/+$/, '');
+const TESTLINK_BASE_URL = (process.env.TESTLINK_BASE_URL || '').replace(/\/+$/, '');
 const TESTLINK_LOGIN_URL = process.env.TESTLINK_LOGIN_URL || `${TESTLINK_BASE_URL}/login.php`;
 
-const TESTLINK_USER = process.env.TESTLINK_USER || 'harsh';
-const TESTLINK_PASS = process.env.TESTLINK_PASS || '9ZvSgQc466';
+const TESTLINK_USER = process.env.TESTLINK_USER;
+const TESTLINK_PASS = process.env.TESTLINK_PASS;
 
-const TARGET_PROJECT_VALUE = process.env.TARGET_PROJECT_VALUE || '1';            // CQ:CreditQ
-const TARGET_PROJECT_NAME = process.env.TARGET_PROJECT_NAME || 'CreditQ';
+const TARGET_PROJECT_VALUE = process.env.TARGET_PROJECT_VALUE;
+const TARGET_PROJECT_NAME = process.env.TARGET_PROJECT_NAME;
 const TARGET_PLAN_LABEL = process.env.TARGET_PLAN_LABEL;
 
-const TESTER_ID = process.env.TESTER_ID || '9';                                 // harsh
+const TESTER_ID = process.env.TESTER_ID;
 
 // Target Build Configuration: Loaded from .env
 const TARGET_BUILD_ID = process.env.TARGET_BUILD_ID;
-const TARGET_BUILD_NAME = process.env.TARGET_BUILD_NAME || 'Round _1';
+const TARGET_BUILD_NAME = process.env.TARGET_BUILD_NAME;
 
 // Delays & Timeouts
-const DELAY_MS = Number(process.env.DELAY_MS) || 3000;                          // step delay in ms
-const STEP_TIMEOUT_MS = Number(process.env.STEP_TIMEOUT_MS) || 30000;           // step timeout in ms
-const HEADLESS = process.env.HEADLESS === 'true';                               // headless mode
-const SLOW_MO = Number(process.env.SLOW_MO) || 300;                             // action slow-mo in ms
+const DELAY_MS = Number(process.env.DELAY_MS);
+const STEP_TIMEOUT_MS = Number(process.env.STEP_TIMEOUT_MS);
+const HEADLESS = process.env.HEADLESS === 'true';
+const SLOW_MO = Number(process.env.SLOW_MO);
 
 // File Storage & Upload Directories
 const XML_DIR = process.env.XML_DIR;
@@ -364,9 +364,9 @@ function getTestCaseCountFromFile(filePath) {
 
     let parsedUrl;
     try {
-      parsedUrl = new URL(TESTLINK_LOGIN_URL);
+      parsedUrl = new URL(TESTLINK_LOGIN_URL.startsWith('http') ? TESTLINK_LOGIN_URL : `https://${TESTLINK_LOGIN_URL}`);
     } catch (_) {
-      parsedUrl = new URL('https://testing.creditq.co.in/login.php');
+      parsedUrl = new URL(TESTLINK_LOGIN_URL);
     }
     const authHost = parsedUrl.host;
     const authPath = parsedUrl.pathname + parsedUrl.search;
